@@ -121,16 +121,16 @@ void pedir_fecha_nacimiento(int* edad){
 PRE: pide al aspirante un numero entero entre 0(DONAS_MIN), 12(DONAS_MAX) de donas que sacrificará.
 POST: valida y actualiza el numero de donas sacrificadas.
 */
-void sacrificar_donas(int *donas_dadas){
-	int numero_de_donas_dadas;
-	printf("Cuántas donas estaría dispuesto a sacrificar para el Número Uno\n");
-	scanf(" %i", &numero_de_donas_dadas);
-	if ((numero_de_donas_dadas > DONAS_MIN) && (numero_de_donas_dadas <= DONAS_MAX)){
-	   *donas_dadas = numero_de_donas_dadas;
-	} else {
-	  printf("volver a preguntar");
-	  /*volver a preguntar*/
+void sacrificar_donas(int *numero_donas){
+	int donas_dadas;
+	printf("¿Cuántas donas estaría dispuesto a sacrificar para el Número Uno?\ndispones de [0] cero donas a [12] doce donas\n");
+	scanf(" %i", &donas_dadas);
+	
+	while (!((donas_dadas >= DONAS_MIN) && (donas_dadas <= DONAS_MAX))){
+	  printf("---el número no es valido---\n¿Cuántas donas estaría dispuesto a sacrificar para el Número Uno?\ndispones de [0] cero donas a [12] doce donas\n");
+	  scanf(" %i", &donas_dadas);
 	}
+	*numero_donas = donas_dadas;
 }
 
 int main() {
@@ -139,7 +139,7 @@ int main() {
   char fundador = '-';
   bool secreto = false; 
   int edad_aspirante = 0;
-  int numero_de_donas = 0;
+  int numero_donas = 0;
   
   printf("---Prueba de iniciación (Los Magios)---\n\n");
   preguntar_fundador(&fundador);
@@ -161,7 +161,9 @@ int main() {
     return 0;
   }
   
-  sacrificar_donas(&numero_de_donas);
+  sacrificar_donas(&numero_donas);
+  
+  printf("magio novato\n");
   
   return 0;
 }
