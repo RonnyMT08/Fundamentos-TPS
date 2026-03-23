@@ -20,6 +20,19 @@ const int DONAS_MAX = 12;
 const int DONAS_MIN = 0;
 
 /*
+PRE:
+POST:
+*/
+int puntuar_fundador(char *fundador){
+  if ( *fundador == JEBEDIAH_SPRINGFIELD ){
+    return +100;
+  } else {
+    return -20;
+  }
+}
+
+
+/*
 PRE:-
 POST: devuelve true si la respuesta dada es una opcion permitida para contar los como intento en la primera pregunta(fundador de springfiel). False en caso contrario.
 */
@@ -51,18 +64,28 @@ void pedir_fundador(char *fundador, int *puntos, char *estado_del_aspirante){
   char numero_intentos = 3;
   
   for (int i = 0; i < numero_intentos; i++){
+
     printf("¿Quién fundó realmente Springfield? \n[J] Jebediah Springfield \n[A] Los aliens \n[S] Los Magios \n[B] Sr. Burns \n---cuentas con %i intento(s) más---\n", numero_intentos - i);
     scanf(" %c", fundador);
-    if ( *fundador == JEBEDIAH_SPRINGFIELD ){
-      *puntos += 100;
+
+    if ( (es_fundador_valido(fundador) && (*fundador == JEBEDIAH_SPRINGFIELD)) ){
+      puntos += puntuar_fundador(fundador);
       return;
+    } else if ((es_fundador_valido(fundador))){
+      puntos += puntuar_fundador(fundador);
     }
     
     while ( !es_fundador_valido(fundador)){    
       printf("---'%c' No es una opción valida---\n¿Quién fundó realmente Springfield? \n[J] Jebediah Springfield \n[A] Los aliens \n[S] Los Magios \n[B] Sr. Burns\n", *fundador);
       scanf(" %c", fundador);
     }
-    *puntos -= 20;
+
+    if ( (es_fundador_valido(fundador) && (*fundador == JEBEDIAH_SPRINGFIELD)) ){
+      puntos += puntuar_fundador(fundador);
+      return;
+    } else {
+      puntos += puntuar_fundador(fundador);
+    }
   }
   *estado_del_aspirante = RECHAZADO;
 }
