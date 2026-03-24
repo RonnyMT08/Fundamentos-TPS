@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-const char RECHAZADO = 'R';
 const int INTENTOS_MAXIMO =  3;
 
 const char JEBEDIAH_SPRINGFIELD = 'J';
@@ -29,6 +28,23 @@ const int INDICE_PTOS_POR_EDAD = 2;
 const int DONAS_MAX = 12;
 const int DONAS_MIN = 0;
 
+const int RANG_DONAS_NULO = 0;
+const int RANG_DONAS_BAJO = 3;
+const int RANG_DONAS_MEDIO = 6;
+const int RANG_DONAS_ALTO = 9;
+const int RANG_DONAS_MAXIMO = 12;
+
+const int PTOS_DONAS_RANG_NULO = 100;
+const int PTOS_DONAS_RANG_BAJO = 10;
+const int PTOS_DONAS_RANG_MEDIO = 40;
+const int PTOS_DONAS_RANG_ALTO = 70;
+const int PTOS_DONAS_RANG_MAXIMO = 120;
+
+const int PTOS_GRADO_RECHAZADO = 0;
+const int PTOS_GRADO_ASPIRANTE = 150;
+const int PTOS_GRADO_MAGIO_NOVATO = 250;
+const int PTOS_GRADO_MAGIO = 350;
+const int PTOS_GRADO_LIDER_SUPREMO = 350;
 
 /*
 PRE: el fundador debe ser JEBEDIAH SPRINGFIEL, LOS ALIENS, SR. BRUNS O LOS MAGIOS
@@ -86,18 +102,18 @@ PRE: las de donas debe ser entre 0 donas y 12 donas
 POST: devuelve los puntos obtenidos por el número de donas sacrificadas.
 */
 int puntos_por_donas(int *numero_donas){
-  if ( *numero_donas == 0 ){
-    return 100;
-  } else if (*numero_donas > 0 && *numero_donas <= 3){
-    return 10;
-  } else if (*numero_donas > 3 && *numero_donas <= 6){
-    return 40;
-  } else if (*numero_donas > 6 && *numero_donas <= 9){
-    return 70;
-  } else if (*numero_donas > 9 && *numero_donas <= 12){
-    return 120;
+  if ( *numero_donas == RANG_DONAS_NULO ){
+    return PTOS_DONAS_RANG_NULO;
+  } else if (*numero_donas > RANG_DONAS_NULO && *numero_donas <= RANG_DONAS_BAJO){
+    return PTOS_DONAS_RANG_BAJO;
+  } else if (*numero_donas > RANG_DONAS_BAJO && *numero_donas <= RANG_DONAS_MEDIO){
+    return PTOS_DONAS_RANG_MEDIO;
+  } else if (*numero_donas > RANG_DONAS_MEDIO && *numero_donas <= RANG_DONAS_ALTO){
+    return PTOS_DONAS_RANG_ALTO;
+  } else if (*numero_donas > RANG_DONAS_ALTO && *numero_donas <= RANG_DONAS_MAXIMO){
+    return PTOS_DONAS_RANG_MAXIMO;
   } else {
-    return 0;
+    return PTOS_DONAS_RANG_NULO;
   }
 } 
 
@@ -207,19 +223,18 @@ PRE: se debe ingresar solo numero enteros
 POST: imprime por pantalla el grado de magio obtenido por el aspirante segun los puntos
 */
 void dar_grado_de_magio(int puntos){
-  if (puntos < 0){
+  if (puntos < PTOS_GRADO_RECHAZADO){
     printf("-RECHAZADO- \n");
-  } else if (puntos >= 0 && puntos <= 150){
+  } else if (puntos >= PTOS_GRADO_RECHAZADO && puntos <= PTOS_GRADO_ASPIRANTE){
     printf("-ASPIRANTE- \n");
-  } else if (puntos >= 151 && puntos <= 250){
+  } else if (puntos > PTOS_GRADO_ASPIRANTE && puntos <= PTOS_GRADO_MAGIO_NOVATO){
     printf("-MAGIO NOVATO- \n");
-  } else if (puntos >= 251 && puntos <= 349){
+  } else if (puntos > PTOS_GRADO_MAGIO_NOVATO && puntos < PTOS_GRADO_MAGIO){
     printf("-MAGIO-\n");
-  } else if (puntos >= 350){
+  } else if (puntos >= PTOS_GRADO_LIDER_SUPREMO){
     printf("-LIDER SUPREMO- \n");
   }
 }
-
 
 int main() {
   char fundador = '-';
@@ -236,11 +251,11 @@ int main() {
     printf("-RECHAZADO-\n");
     return 0;
   }
-  printf("cuentas con %i puntos obtenidos\n", puntos);
+  printf("Acumulaste %i puntos\n\n", puntos);
 
   pedir_mantener_secreto(&secreto);
   puntos += puntos_por_silencio(&secreto);  
-  printf("cuentas con %i puntos obtenidos\n", puntos);
+  printf("Acumulaste %i puntos\n\n", puntos);
 
   pedir_fecha_nacimiento(&anio, &mes);
   int edad = edad_del_aspirante(&anio, &mes);
@@ -250,12 +265,12 @@ int main() {
   } else {
     puntos += puntos_por_edad(&edad);
   }
-  printf("\nEdad: %i\n", edad);
-  printf("cuentas con %i puntos obtenidos\n", puntos);
+  printf("Edad: %i\n", edad);
+  printf("Acumulaste %i puntos\n\n", puntos);
   
   pedir_donas(&numero_donas);
   puntos += puntos_por_donas(&numero_donas);
-  printf("cuentas con %i puntos obtenidos\n", puntos);
+  printf("Acumulaste %i puntos\n\n", puntos);
 
   printf("Con las respuestas brindadas determinamos que tu estado es:");
   dar_grado_de_magio(puntos);
