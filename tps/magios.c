@@ -103,7 +103,7 @@ POST: devuelve los puntos obtenidos por el número de donas sacrificadas.
 */
 int puntos_por_donas(int *numero_donas){
   if ( *numero_donas == RANG_DONAS_NULO ){
-    return PTOS_DONAS_RANG_NULO;
+    return -PTOS_DONAS_RANG_NULO;
   } else if (*numero_donas > RANG_DONAS_NULO && *numero_donas <= RANG_DONAS_BAJO){
     return PTOS_DONAS_RANG_BAJO;
   } else if (*numero_donas > RANG_DONAS_BAJO && *numero_donas <= RANG_DONAS_MEDIO){
