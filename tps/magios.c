@@ -22,7 +22,7 @@ const int MES_ACTUAL = 03;
 const int ANIO_LIMITE = 1926;
 const int MES_LIMITE = 03; 
 
-const int EDAD_LIMITE = 18;
+const int EDAD_MINIMA = 18;
 const int INDICE_PTOS_POR_EDAD = 2;
 
 const int DONAS_MAX = 12;
@@ -50,13 +50,11 @@ const int PTOS_GRADO_LIDER_SUPREMO = 350;
 PRE: el fundador debe ser JEBEDIAH SPRINGFIEL, LOS ALIENS, SR. BRUNS O LOS MAGIOS
 POST: devuelve los puntos acreditados por seleccionar un de fundador seleccionado
 */
-int puntos_por_fundador(char *fundador_dado){
-  if ( *fundador_dado == JEBEDIAH_SPRINGFIELD ){
+int puntos_por_fundador(char *fundador_dado, int *intentos){
+  if ( (*intentos == 0) && (*fundador_dado == JEBEDIAH_SPRINGFIELD) ){
     return +PTOS_FUNDADOR_CORRECTO;
-  } else if (*fundador_dado == LOS_ALIENS || *fundador_dado == LOS_MAGIOS ||*fundador_dado == SR_BURNS ){
-    return -PTOS_FUNDADOR_INCORRECTO;
   } else {
-    return 0;
+    return +PTOS_FUNDADOR_CORRECTO-((*intentos)*(PTOS_FUNDADOR_INCORRECTO));
   }
 }
 
@@ -75,7 +73,7 @@ int puntos_por_silencio(bool *guardar_secreto){
 }
 
 /*
-  PRE:-
+  PRE: -
   POST: devuelve la edad del aspirante
 */
 int edad_del_aspirante(int *anio_dado, int *mes_dado){
@@ -90,11 +88,7 @@ PRE: la edad debe ser mayor o igual a 18 años
 POST: devuelve los puntos acreditados por la (edad*2) del aspirante
 */
 int puntos_por_edad(int *edad_dado){
-  if ( *edad_dado >= EDAD_LIMITE ){
-    return INDICE_PTOS_POR_EDAD*(*edad_dado) ;
-  } else {
-    return 0;
-  }
+  return INDICE_PTOS_POR_EDAD*(*edad_dado) ;
 }
 
 /*
@@ -118,57 +112,74 @@ int puntos_por_donas(int *numero_donas){
 } 
 
 /*
-PRE: el fundador debe ser una opcion de fundador incorrecta 
-POST: devuelve true si la el fundador son: LOS ALIENS, MAGIOS OSR o BURNS. False en caso contrario
+PRE: - 
+POST: devuelve true si el fundador es LOS MAGIOS, SR. BRUNS, LOS ALIENS. False en caso contrario
 */
-bool es_fundador_valido(char *fundador_dado){
-  return ((*fundador_dado == LOS_ALIENS) || (*fundador_dado == LOS_MAGIOS) || (*fundador_dado == SR_BURNS) || (*fundador_dado == JEBEDIAH_SPRINGFIELD));
+bool es_fundador_incorrecto(char fundador_dado){
+  return ((fundador_dado == LOS_ALIENS) || (fundador_dado == LOS_MAGIOS) || (fundador_dado == SR_BURNS));
+}
+
+/*
+PRE:-
+POST: devuelve true si el fundador es JEBADIAH SPRINGFIELD, False en caso contrario
+*/
+bool es_fundador_correcto(char fundador_dado){
+  return (fundador_dado == JEBEDIAH_SPRINGFIELD);
 }
 
 /*
   PRE: -
   POST: devuelve true si la fecha(año/mes) es una fecha entre 1926/03 - 2026/03. False en caso contrario
 */
-bool es_fecha_valida(int *mes_dado, int *anio_dado){
-  return(((*anio_dado >= ANIO_LIMITE) && (*anio_dado <= ANIO_ACTUAL)) && ((*mes_dado <= 12) && (*mes_dado > 0)));
+bool es_fecha_valida(int mes_dado, int anio_dado){
+  return(((anio_dado >= ANIO_LIMITE) && (anio_dado <= ANIO_ACTUAL)) && ((mes_dado <= 12) && (mes_dado > 0)));
+}
+
+/*
+PRE: -
+POST: devuelve true si la edad es mayor a 18, False en caso contrario
+*/
+bool es_mayor_edad(int edad){
+  return(edad >= EDAD_MINIMA);
 }
 
 /*
   PRE: -
   POST: devuelve true si las el numero de donas esta entre 0-12. False en caso contrario
 */
-bool numero_donas_validas(int *donas_dadas){
-  return ((*donas_dadas >= DONAS_MIN) && (*donas_dadas <= DONAS_MAX));
+bool numero_donas_validas(int donas_dadas){
+  return ((donas_dadas >= DONAS_MIN) && (donas_dadas <= DONAS_MAX));
 }
+
 /*
 PRE: -
-POST: guarda el fundador ingresado por el aspirante 
+POST: guarda en 'fundador' la respuesta ingresado por el usuario, evalua los intentos que utilizados. 
 */
-void pedir_fundador(char *fundador_dado){
-  printf("¿Quién fundó realmente Springfield? \n[J] Jebediah Springfield \n[A] Los aliens \n[S] Los Magios \n[B] Sr. Burns \n" );
+void pedir_fundador(char *fundador_dado, int *intentos ){
+  printf("¿Quién fundó realmente Springfield? \n[J] Jebediah Springfield \n[A] Los Aliens \n[S] Los Magios \n[B] Sr. Burns \n" );
   scanf(" %c", fundador_dado);
   
-  while ( !es_fundador_valido(fundador_dado) ){
-    printf("---'%c' No es una opción, recordá seleccionar [J], [A], [S] o [B]---\n", *fundador_dado);
-    printf("¿Quién fundó realmente Springfield? \n[J] Jebediah Springfield \n[A] Los aliens \n[S] Los Magios \n[B] Sr. Burns \n");      
-    scanf(" %c", fundador_dado);
-  }
-}
+  while ( !(es_fundador_correcto(*fundador_dado)) && (*intentos < INTENTOS_MAXIMO -1) ){
+    
+    if (es_fundador_incorrecto(*fundador_dado)){
+      *intentos += 1;
+      printf("---La respuesta es incorrecta. Cuentas con %i intento(s) mas---\n", INTENTOS_MAXIMO -(*intentos));
+      printf("¿Quién fundó realmente Springfield? \n[J] Jebediah Springfield \n[A] Los Aliens \n[S] Los Magios \n[B] Sr. Burns \n" );
+      scanf(" %c", fundador_dado);
 
-/*
-PRE:-
-POST: guarda en 'puntos' la cantidad de puntos correspondientes se segun el fundador JEBEDIAH +100, LOS ALIENS, SR. BURNS, LOS MAGIOS -20 
-*/
-void dar_puntos_por_fundador(char *fundador, int *puntos){
-  for (int i = 0 ; i < INTENTOS_MAXIMO ;i++){
-    printf("---cuentas con %i intento(s)---\n", INTENTOS_MAXIMO-i);
-    pedir_fundador(fundador);
-    *puntos += puntos_por_fundador(fundador);
-
-    if (*fundador == JEBEDIAH_SPRINGFIELD){
-      i = INTENTOS_MAXIMO;
+    } else {
+      printf("---'%c' No es una opción, si crees que el fundador es Jebediah Springfield elegí [J], Los aliens elegí [A], Los Magios [S] o El Sr. Bunrs [B]---\n", *fundador_dado);
+      printf("¿Quién fundó realmente Springfield? \n[J] Jebediah Springfield \n[A] Los Aliens \n[S] Los Magios \n[B] Sr. Burns \n");      
+      scanf(" %c", fundador_dado);
     }
   }
+}
+/*
+PRE:-
+POST: muestra por pantalla los puntos acumulados 
+*/
+void mostrar_puntos(int puntos){
+  printf("---Acumulaste %i puntos---\n\n", puntos);
 }
 
 /*
@@ -197,7 +208,7 @@ void pedir_fecha_nacimiento(int *anio_dado, int *mes_dado){
   printf("¿Cuál es su fecha de nacimiento?(formato:yyyy/mm)\nFecha:");
   scanf("%d/%d", anio_dado, mes_dado);
   
-  while (!(es_fecha_valida(mes_dado, anio_dado)) || ((*anio_dado == ANIO_ACTUAL) && (*mes_dado > MES_ACTUAL) ) || ((*anio_dado == ANIO_LIMITE) && (*mes_dado < MES_LIMITE))){
+  while (!(es_fecha_valida(*mes_dado, *anio_dado)) || ((*anio_dado == ANIO_ACTUAL) && (*mes_dado > MES_ACTUAL) ) || ((*anio_dado == ANIO_LIMITE) && (*mes_dado < MES_LIMITE))){
     printf("---la fecha es incorrecta ó fuera del rango permitido, ejemplo fecha:2000/08---\n");
     printf("¿Cuál es su fecha de nacimiento?(formato:yyyy/mm)\nFecha:");
     scanf("%d/%d", anio_dado, mes_dado);
@@ -212,7 +223,7 @@ void pedir_donas(int *donas_dadas){
 	printf("¿Cuántas donas estaría dispuesto a sacrificar para el Número Uno?\ndispones de [0] cero donas a [12] doce donas\n");
 	scanf(" %i", donas_dadas);
 	
-	while ( !(numero_donas_validas(donas_dadas)) ){
+	while ( !(numero_donas_validas(*donas_dadas)) ){
 	  printf("---el número no es valido---\n¿Cuántas donas estaría dispuesto a sacrificar para el Número Uno?\ndispones de [0] cero donas a [12] doce donas\n");
 	  scanf(" %i", donas_dadas);
 	}
@@ -237,40 +248,42 @@ void dar_grado_de_magio(int puntos){
 }
 
 int main() {
+  int puntos = 0;
   char fundador = '-';
+  int intentos = 0;
   bool secreto = false; 
   int mes = 0;
   int anio = 0;
   int numero_donas = 0;
-  int puntos = 0;
-
+  
   printf("---Prueba de iniciación de Magia---\nObjetivo: determinar si una persona es digna de ingresar a la sociedad secreta.\n\n");
-
-  dar_puntos_por_fundador(&fundador, &puntos);
+  
+  pedir_fundador(&fundador, &intentos);
   if (!(fundador == JEBEDIAH_SPRINGFIELD)){
     printf("-RECHAZADO-\n");
     return 0;
   }
-  printf("Acumulaste %i puntos\n\n", puntos);
+  puntos += puntos_por_fundador(&fundador, &intentos);
+  mostrar_puntos(puntos);
 
   pedir_mantener_secreto(&secreto);
   puntos += puntos_por_silencio(&secreto);  
-  printf("Acumulaste %i puntos\n\n", puntos);
+  mostrar_puntos(puntos);
 
   pedir_fecha_nacimiento(&anio, &mes);
   int edad = edad_del_aspirante(&anio, &mes);
-  if (edad < 18){
+  if (es_mayor_edad(edad)){
+    puntos += puntos_por_edad(&edad);
+    printf("Edad: %i\n", edad);
+  } else {
     printf("-RECHAZADO-\n");
     return 0;
-  } else {
-    puntos += puntos_por_edad(&edad);
   }
-  printf("Edad: %i\n", edad);
-  printf("Acumulaste %i puntos\n\n", puntos);
+  mostrar_puntos(puntos);
   
   pedir_donas(&numero_donas);
   puntos += puntos_por_donas(&numero_donas);
-  printf("Acumulaste %i puntos\n\n", puntos);
+  mostrar_puntos(puntos);
 
   printf("Con las respuestas brindadas determinamos que tu estado es:");
   dar_grado_de_magio(puntos);
