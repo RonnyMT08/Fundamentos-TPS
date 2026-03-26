@@ -15,7 +15,7 @@ const char SI = 'S';
 const char NO = 'N';
 
 const int PTOS_GUARDAR_SECRETO = 50;
-const int PTOS_DECIR_SECRETO = 300;
+const int PTOS_DECIR_SECRETO = -300;
 
 const int ANIO_ACTUAL = 2026;
 const int MES_ACTUAL = 03;
@@ -34,7 +34,7 @@ const int RANG_DONAS_MEDIO = 6;
 const int RANG_DONAS_ALTO = 9;
 const int RANG_DONAS_MAXIMO = 12;
 
-const int PTOS_DONAS_RANG_NULO = 100;
+const int PTOS_DONAS_RANG_NULO = -100;
 const int PTOS_DONAS_RANG_BAJO = 10;
 const int PTOS_DONAS_RANG_MEDIO = 40;
 const int PTOS_DONAS_RANG_ALTO = 70;
@@ -43,18 +43,18 @@ const int PTOS_DONAS_RANG_MAXIMO = 120;
 const int PTOS_GRADO_RECHAZADO = 0;
 const int PTOS_GRADO_ASPIRANTE = 150;
 const int PTOS_GRADO_MAGIO_NOVATO = 250;
-const int PTOS_GRADO_MAGIO = 350;
+const int PTOS_GRADO_MAGIO = 349;
 const int PTOS_GRADO_LIDER_SUPREMO = 350;
 
 /*
 PRE: el fundador debe ser JEBEDIAH SPRINGFIEL, LOS ALIENS, SR. BRUNS O LOS MAGIOS
 POST: devuelve los puntos acreditados por seleccionar un de fundador seleccionado
 */
-int puntos_por_fundador(char *fundador_dado, int *intentos){
-  if ( (*intentos == 0) && (*fundador_dado == JEBEDIAH_SPRINGFIELD) ){
-    return +PTOS_FUNDADOR_CORRECTO;
+int puntos_por_fundador(char fundador_dado, int intentos){
+  if ( (intentos == 0) && (fundador_dado == JEBEDIAH_SPRINGFIELD) ){
+    return PTOS_FUNDADOR_CORRECTO;
   } else {
-    return +PTOS_FUNDADOR_CORRECTO-((*intentos)*(PTOS_FUNDADOR_INCORRECTO));
+    return (PTOS_FUNDADOR_CORRECTO - ((intentos)*(PTOS_FUNDADOR_INCORRECTO)));
   }
 }
 
@@ -62,49 +62,48 @@ int puntos_por_fundador(char *fundador_dado, int *intentos){
 PRE: el secreto debe ser true(guardado) o false(no guardado)
 POST: devuelve los puntos acreaditados por guardar silencio (no decir el secreto)
 */
-int puntos_por_silencio(bool *guardar_secreto){
-  if (*guardar_secreto == true){
-    return +PTOS_GUARDAR_SECRETO;
-  } else if (*guardar_secreto == false){
-    return -PTOS_DECIR_SECRETO;
+int puntos_por_silencio(bool guardar_secreto){
+  if (guardar_secreto == true){
+    return (PTOS_GUARDAR_SECRETO);
   } else {
-    return 0;
+    return (PTOS_DECIR_SECRETO);
   }
 }
 
 /*
-  PRE: -
+  PRE: la fecha ingresada tiene que ser entre 1926/03 - 2026/03
   POST: devuelve la edad del aspirante
 */
-int edad_del_aspirante(int *anio_dado, int *mes_dado){
-  if ((MES_ACTUAL - (*mes_dado)) < 0){
-    *anio_dado += 1;
+int edad_por_fecha(int anio_dado, int mes_dado){
+  int edad = ANIO_ACTUAL - anio_dado;
+  if (MES_ACTUAL < mes_dado) {
+      edad -= 1;
   }
-  return (ANIO_ACTUAL-(*anio_dado));
+  return edad;
 }
 
 /*
 PRE: la edad debe ser mayor o igual a 18 años
 POST: devuelve los puntos acreditados por la (edad*2) del aspirante
 */
-int puntos_por_edad(int *edad_dado){
-  return INDICE_PTOS_POR_EDAD*(*edad_dado) ;
+int puntos_por_edad(int edad_dado){
+  return (INDICE_PTOS_POR_EDAD*(edad_dado));
 }
 
 /*
-PRE: las de donas debe ser entre 0 donas y 12 donas
+PRE: el numero de donas debe ser entre 0 donas y 12 donas
 POST: devuelve los puntos obtenidos por el número de donas sacrificadas.
 */
-int puntos_por_donas(int *numero_donas){
-  if ( *numero_donas == RANG_DONAS_NULO ){
-    return -PTOS_DONAS_RANG_NULO;
-  } else if (*numero_donas > RANG_DONAS_NULO && *numero_donas <= RANG_DONAS_BAJO){
+int puntos_por_donas(int numero_donas){
+  if ( numero_donas == RANG_DONAS_NULO ){
+    return PTOS_DONAS_RANG_NULO;
+  } else if (numero_donas > RANG_DONAS_NULO && numero_donas <= RANG_DONAS_BAJO){
     return PTOS_DONAS_RANG_BAJO;
-  } else if (*numero_donas > RANG_DONAS_BAJO && *numero_donas <= RANG_DONAS_MEDIO){
+  } else if (numero_donas > RANG_DONAS_BAJO && numero_donas <= RANG_DONAS_MEDIO){
     return PTOS_DONAS_RANG_MEDIO;
-  } else if (*numero_donas > RANG_DONAS_MEDIO && *numero_donas <= RANG_DONAS_ALTO){
+  } else if (numero_donas > RANG_DONAS_MEDIO && numero_donas <= RANG_DONAS_ALTO){
     return PTOS_DONAS_RANG_ALTO;
-  } else if (*numero_donas > RANG_DONAS_ALTO && *numero_donas <= RANG_DONAS_MAXIMO){
+  } else if (numero_donas > RANG_DONAS_ALTO && numero_donas <= RANG_DONAS_MAXIMO){
     return PTOS_DONAS_RANG_MAXIMO;
   } else {
     return PTOS_DONAS_RANG_NULO;
@@ -132,7 +131,7 @@ bool es_fundador_correcto(char fundador_dado){
   POST: devuelve true si la fecha(año/mes) es una fecha entre 1926/03 - 2026/03. False en caso contrario
 */
 bool es_fecha_valida(int mes_dado, int anio_dado){
-  return(((anio_dado >= ANIO_LIMITE) && (anio_dado <= ANIO_ACTUAL)) && ((mes_dado <= 12) && (mes_dado > 0)));
+  return (((anio_dado >= ANIO_LIMITE) && (anio_dado <= ANIO_ACTUAL)) && ((mes_dado <= 12) && (mes_dado > 0)));
 }
 
 /*
@@ -140,7 +139,7 @@ PRE: -
 POST: devuelve true si la edad es mayor a 18, False en caso contrario
 */
 bool es_mayor_edad(int edad){
-  return(edad >= EDAD_MINIMA);
+  return (edad >= EDAD_MINIMA);
 }
 
 /*
@@ -158,22 +157,20 @@ POST: guarda en 'fundador' la respuesta ingresado por el usuario, evalua los int
 void pedir_fundador(char *fundador_dado, int *intentos ){
   printf("¿Quién fundó realmente Springfield? \n[J] Jebediah Springfield \n[A] Los Aliens \n[S] Los Magios \n[B] Sr. Burns \n" );
   scanf(" %c", fundador_dado);
-  
-  while ( !(es_fundador_correcto(*fundador_dado)) && (*intentos < INTENTOS_MAXIMO -1) ){
-    
+
+  while ( ( !es_fundador_correcto(*fundador_dado)) && ((*intentos + 1 < INTENTOS_MAXIMO) || !(es_fundador_incorrecto(*fundador_dado))) ){
     if (es_fundador_incorrecto(*fundador_dado)){
       *intentos += 1;
-      printf("---La respuesta es incorrecta. Cuentas con %i intento(s) mas---\n", INTENTOS_MAXIMO -(*intentos));
-      printf("¿Quién fundó realmente Springfield? \n[J] Jebediah Springfield \n[A] Los Aliens \n[S] Los Magios \n[B] Sr. Burns \n" );
-      scanf(" %c", fundador_dado);
-
-    } else {
-      printf("---'%c' No es una opción, si crees que el fundador es Jebediah Springfield elegí [J], Los aliens elegí [A], Los Magios [S] o El Sr. Bunrs [B]---\n", *fundador_dado);
-      printf("¿Quién fundó realmente Springfield? \n[J] Jebediah Springfield \n[A] Los Aliens \n[S] Los Magios \n[B] Sr. Burns \n");      
-      scanf(" %c", fundador_dado);
+      printf("---La respuesta es incorrecta. Cuentas con %i intento(s) mas---\n\n", INTENTOS_MAXIMO -(*intentos));  
+    } else if (!es_fundador_incorrecto(*fundador_dado)) {
+      printf("---'%c' No es una opción, si crees que el fundador es Jebediah Springfield elegí [J], Los aliens elegí [A], Los Magios [S] o El Sr. Burns [B]---\n\n", *fundador_dado);
     }
+
+    printf("¿Quién fundó realmente Springfield? \n[J] Jebediah Springfield \n[A] Los Aliens \n[S] Los Magios \n[B] Sr. Burns \n" );
+    scanf(" %c", fundador_dado);
   }
 }
+
 /*
 PRE:-
 POST: muestra por pantalla los puntos acumulados 
@@ -240,7 +237,7 @@ void dar_grado_de_magio(int puntos){
     printf("-ASPIRANTE- \n");
   } else if (puntos > PTOS_GRADO_ASPIRANTE && puntos <= PTOS_GRADO_MAGIO_NOVATO){
     printf("-MAGIO NOVATO- \n");
-  } else if (puntos > PTOS_GRADO_MAGIO_NOVATO && puntos < PTOS_GRADO_MAGIO){
+  } else if (puntos > PTOS_GRADO_MAGIO_NOVATO && puntos <= PTOS_GRADO_MAGIO){
     printf("-MAGIO-\n");
   } else if (puntos >= PTOS_GRADO_LIDER_SUPREMO){
     printf("-LIDER SUPREMO- \n");
@@ -263,17 +260,17 @@ int main() {
     printf("-RECHAZADO-\n");
     return 0;
   }
-  puntos += puntos_por_fundador(&fundador, &intentos);
+  puntos += puntos_por_fundador(fundador, intentos);
   mostrar_puntos(puntos);
 
   pedir_mantener_secreto(&secreto);
-  puntos += puntos_por_silencio(&secreto);  
+  puntos += puntos_por_silencio(secreto);  
   mostrar_puntos(puntos);
 
   pedir_fecha_nacimiento(&anio, &mes);
-  int edad = edad_del_aspirante(&anio, &mes);
+  int edad = edad_por_fecha(anio, mes);
   if (es_mayor_edad(edad)){
-    puntos += puntos_por_edad(&edad);
+    puntos += puntos_por_edad(edad);
     printf("Edad: %i\n", edad);
   } else {
     printf("-RECHAZADO-\n");
@@ -282,7 +279,7 @@ int main() {
   mostrar_puntos(puntos);
   
   pedir_donas(&numero_donas);
-  puntos += puntos_por_donas(&numero_donas);
+  puntos += puntos_por_donas(numero_donas);
   mostrar_puntos(puntos);
 
   printf("Con las respuestas brindadas determinamos que tu estado es:");
