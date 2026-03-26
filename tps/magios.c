@@ -146,7 +146,7 @@ bool es_mayor_edad(int edad){
   PRE: -
   POST: devuelve true si las el numero de donas esta entre 0-12. False en caso contrario
 */
-bool numero_donas_validas(int donas_dadas){
+bool es_numero_donas(int donas_dadas){
   return ((donas_dadas >= DONAS_MIN) && (donas_dadas <= DONAS_MAX));
 }
 
@@ -175,7 +175,7 @@ void pedir_fundador(char *fundador_dado, int *intentos ){
 PRE:-
 POST: muestra por pantalla los puntos acumulados 
 */
-void mostrar_puntos(int puntos){
+void dar_puntos(int puntos){
   printf("---Acumulaste %i puntos---\n\n", puntos);
 }
 
@@ -220,7 +220,7 @@ void pedir_donas(int *donas_dadas){
 	printf("¿Cuántas donas estaría dispuesto a sacrificar para el Número Uno?\ndispones de [0] cero donas a [12] doce donas\n");
 	scanf(" %i", donas_dadas);
 	
-	while ( !(numero_donas_validas(*donas_dadas)) ){
+	while ( !(es_numero_donas(*donas_dadas)) ){
 	  printf("---el número no es valido---\n¿Cuántas donas estaría dispuesto a sacrificar para el Número Uno?\ndispones de [0] cero donas a [12] doce donas\n");
 	  scanf(" %i", donas_dadas);
 	}
@@ -245,13 +245,16 @@ void dar_grado_de_magio(int puntos){
 }
 
 int main() {
-  int puntos = 0;
   char fundador = '-';
+  
   int intentos = 0;
-  bool secreto = false; 
-  int mes = 0;
   int anio = 0;
+  int mes = 0;
   int numero_donas = 0;
+  
+  int total_puntos = 0;
+  
+  bool secreto = false; 
   
   printf("---Prueba de iniciación de Magia---\nObjetivo: determinar si una persona es digna de ingresar a la sociedad secreta.\n\n");
   
@@ -260,30 +263,30 @@ int main() {
     printf("-RECHAZADO-\n");
     return 0;
   }
-  puntos += puntos_por_fundador(fundador, intentos);
-  mostrar_puntos(puntos);
+  total_puntos += puntos_por_fundador(fundador, intentos);
+  dar_puntos(total_puntos);
 
   pedir_mantener_secreto(&secreto);
-  puntos += puntos_por_silencio(secreto);  
-  mostrar_puntos(puntos);
+  total_puntos += puntos_por_silencio(secreto);  
+  dar_puntos(total_puntos);
 
   pedir_fecha_nacimiento(&anio, &mes);
   int edad = edad_por_fecha(anio, mes);
   if (es_mayor_edad(edad)){
-    puntos += puntos_por_edad(edad);
+    total_puntos += puntos_por_edad(edad);
     printf("Edad: %i\n", edad);
   } else {
     printf("-RECHAZADO-\n");
     return 0;
   }
-  mostrar_puntos(puntos);
+  dar_puntos(total_puntos);
   
   pedir_donas(&numero_donas);
-  puntos += puntos_por_donas(numero_donas);
-  mostrar_puntos(puntos);
+  total_puntos += puntos_por_donas(numero_donas);
+  dar_puntos(total_puntos);
 
   printf("Con las respuestas brindadas determinamos que tu estado es:");
-  dar_grado_de_magio(puntos);
+  dar_grado_de_magio(total_puntos);
 
   return 0;
 }
