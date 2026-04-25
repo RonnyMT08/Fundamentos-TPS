@@ -21,6 +21,7 @@ typedef struct personaje {
     int hechizos_reveladores;
     int vidas_restantes; 
     int antorchas;
+    bool antorcha_encendida;
 } personaje_t;
 
 typedef struct objeto {
@@ -46,6 +47,7 @@ typedef struct juego {
     nivel_t niveles[MAX_NIVELES];
     int tope_niveles;
     int nivel_actual;
+    bool camino_visible;
 } juego_t;
 
 /*
@@ -81,7 +83,7 @@ void mostrar_juego(juego_t juego);
  * >  0 si el estado es jugando.
  * >  1 si el estado es ganado.
  */
-int estado_nivel(nivel_t nivel);
+int estado_nivel(nivel_t nivel, personaje_t personaje);
 
 /*
  * Pre condiciones: El juego deberá estar inicializado previamente con `inicializar_juego `

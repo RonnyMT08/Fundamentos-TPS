@@ -6,10 +6,13 @@
 
 int main(){
     srand ( (unsigned)time(NULL));
-
     juego_t juego;
 
     inicializar_juego(&juego);
+
     mostrar_juego(juego);
+    char movimiento = ' ';
+    realizar_jugada(&juego, movimiento);
+    
     return 0;
 }
