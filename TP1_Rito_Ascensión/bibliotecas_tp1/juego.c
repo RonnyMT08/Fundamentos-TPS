@@ -8,7 +8,7 @@ const int CORRECCION_NIVELC = -1; //SI EL NIVEL INICIO ES 0 -> CORERCCION =0 (1)
 const char* MSJ_MOVIMIENTOS = "      -W-          -S-            -A-           -D- \n     Arriba       Abajo        Izquierda      Derecha \n";
 const char* MSJ_ELIMINACION = "\n\nELIMINADO...!!\n\nTe quedaste sin vidas\n";
 const char* MSJ_JUEGO_GANADO = "\n En hora buena...\n\n tú ascención fue aprobada, pronto nos comunicaremos contigo\n";
-
+const char* MSJ_INSTRUCCIONES = "El movimiento es invalido. \n+++\nLas opciones son: \nW -Para moverse hacia arriba \nS -Para moverse hacia abajo \nA -Para moverse hacia la izquierda \nD -Para moverse hacia la derecha \nL -Para activar la antorcha \nH -Para activar el hechizo revelador\n+++";
 /*
 Pre condiciones: -
 Post condiciones: devuelve true si el 'movimiento' es H, L, D, S, A ó W. False en caso contrario.
@@ -24,7 +24,7 @@ void pedir_movimiento(char* movimiento){
     printf("%s\n", MSJ_MOVIMIENTOS);
     scanf(" %c", movimiento);
     while (!es_opcion(*movimiento) ){
-        printf("El movimiento es invalido. \n+++\nLas opciones son: \nW -Para moverse hacia arriba \nS -Para moverse hacia abajo \nA -Para moverse hacia la izquierda \nD -Para moverse hacia la derecha \nL -Para activar la antorcha \nH -Para activar el hechizo revelador\n+++\n");
+        printf("%s\n", MSJ_INSTRUCCIONES);
         scanf(" %c", movimiento);
     }
 }
@@ -49,7 +49,6 @@ int main(){
             juego.camino_visible = true;
         }
     }
-
 
     if (estado_juego(juego) == -1){
         system("clear");
