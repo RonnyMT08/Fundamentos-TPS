@@ -3,6 +3,8 @@
 #include <time.h>   // Para obtener una semilla desde el reloj
 #include <stdio.h>
 
+const int CORRECCION_NIVELC = -1; //SI EL NIVEL INICIO ES 0 -> CORERCCION =0 (1)-->1
+
 const char* MSJ_MOVIMIENTOS = "      -W-          -S-            -A-           -D- \n     Arriba       Abajo        Izquierda      Derecha \n";
 const char* MSJ_ELIMINACION = "\n\nELIMINADO...!!\n\nTe quedaste sin vidas\n";
 const char* MSJ_JUEGO_GANADO = "\n En hora buena...\n\n tú ascención fue aprobada, pronto nos comunicaremos contigo\n";
@@ -32,7 +34,7 @@ int main(){
     juego_t juego;
 
     inicializar_juego(&juego);
-    int nivel = juego.nivel_actual;
+    int nivel = juego.nivel_actual+CORRECCION_NIVELC;
 
     while ((estado_juego(juego) == 0) && ( nivel < 3)){
         mostrar_juego(juego);
@@ -43,7 +45,7 @@ int main(){
 
         if (estado_nivel((juego).niveles[nivel], juego.homero) == 1){
             cambiar_nivel(&(juego));
-            nivel = juego.nivel_actual;
+            nivel = juego.nivel_actual+CORRECCION_NIVELC;
             juego.camino_visible = true;
         }
     }
