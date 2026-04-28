@@ -12,13 +12,13 @@ const int NIVEL_INICIO = 1;
 const int CORRECCION_NIVEL = -1; //SI EL NIVEL INICIO ES 0 -> CORERCCION =0 (1)-->1
 
 const int VIDAS_INICIALES = 5;
-const int ANTORCHAS_INICIALES = 55;
-const int RANGO_MAMHATTAN = 100;
+const int ANTORCHAS_INICIALES = 5;
+const int RANGO_MANHATTAN = 3;
 
 const int HECHIZOS_REVELADORES_INICIALES = 5;
 const int PERGAMINOS_INICIALES = 3;
 
-const int OBSTACULOS_INICIAL = 10;
+const int PIEDRAS_CASTIGO_INCIALES = 10;
 
 const char HOMERO = 'H';
 
@@ -61,7 +61,7 @@ int numero_aleatorio(int minimo, int maximo){
 */
 void inicializar_niveles(juego_t* juego){
     (*juego).nivel_actual = NIVEL_INICIO;
-    (*juego).tope_niveles = NIVEL_INICIO + 3;
+    (*juego).tope_niveles = 2;
     (*juego).camino_visible = true;    
 }
 
@@ -222,16 +222,14 @@ bool es_posicion_herramienta(objeto_t herramienta[], int tope_herramientas, int 
 * Post condiciones: Inicializa una 10 piedras en posicion aleatoria(perteneciente al camino) sin superponer a otro objeto por cada uno de los tres niveles, carga el tope de los obstaculos por nivel.
 */
 void inicializar_piedras_castigo(nivel_t niveles[MAX_NIVELES], int tope_niveles){
-   //   niveles[i].tope_obstaculos = cantidad_obstaculos;
 
     for (int i = 0; i < tope_niveles; i++){
         niveles[i].tope_obstaculos = 0;
         int tope_camino = niveles[i].tope_camino;
 
-        for (int j = 0; j <= OBSTACULOS_INICIAL; j++){
+        for (int j = 0; j < PIEDRAS_CASTIGO_INCIALES; j++){
             int posicion_camino =  numero_aleatorio(1, (tope_camino-2));
             
-            // asigno la fila, columna del camino a la piedra
             int fil_piedra = niveles[i].camino[posicion_camino].fil;
             int col_piedra = niveles[i].camino[posicion_camino].col;
 
@@ -307,15 +305,15 @@ void inicializar_juego(juego_t* juego) {
     
     inicializar_niveles( &(*juego));
 
-    inicializar_estructura( (*juego).niveles, (*juego).nivel_actual+CORRECCION_NIVEL, (*juego).tope_niveles+CORRECCION_NIVEL);
+    inicializar_estructura( (*juego).niveles, (*juego).nivel_actual+CORRECCION_NIVEL, (*juego).tope_niveles);
 
     inicializar_homero( &(*juego).homero, (*juego).niveles[0].camino[0]);
 
-    inicializar_pergaminos( (*juego).niveles, (*juego).tope_niveles+CORRECCION_NIVEL);
+    inicializar_pergaminos( (*juego).niveles, (*juego).tope_niveles);
 
-    inicializar_herramientas( (*juego).niveles, (*juego).tope_niveles+CORRECCION_NIVEL);
+    inicializar_herramientas( (*juego).niveles, (*juego).tope_niveles);
 
-    inicializar_obstaculos((*juego).niveles, (*juego).tope_niveles+CORRECCION_NIVEL);
+    inicializar_obstaculos((*juego).niveles, (*juego).tope_niveles);
 }
 //////////////////////////////////////////////////////////
 
@@ -375,16 +373,6 @@ void valorar_movimiento(char movimiento, int* fil_movimiento, int* col_movimient
 void posicionar_personaje(coordenada_t* posicion, int fil_movimiento, int col_movimiento){
     (*posicion).fil += fil_movimiento;
     (*posicion).col += col_movimiento;
-}
-
-/*
-* Pre condiciones: la 'posicion' del pergamino debe estar inicializado.
-* Post condiciones: actualiza la posicion del pergamino de acuerdo a los valores del movimiento(fil_camino y col_camino).
-*/
-void llevar_pergamino(coordenada_t* posicion,bool* recolecto_pergamino, int fil_movimiento, int col_movimiento){
-    (*posicion).fil += fil_movimiento;
-    (*posicion).col += col_movimiento;
-    (*recolecto_pergamino) = true;
 }
 
 /*
@@ -529,7 +517,6 @@ void posicionar_pergamino(nivel_t nivel, coordenada_t* posicion_pergamino, int t
     (*posicion_pergamino).fil = fil_pergamino;
     (*posicion_pergamino).col = col_pergamino;
 
-
 }
 
 /*
@@ -545,11 +532,13 @@ void dirigir_movimiento(juego_t *juego, int fil_movimiento, int col_movimiento){
     if (es_posicion_camino((*juego).niveles[nivel_actual].camino, (*juego).niveles[nivel_actual].tope_camino, fil_personaje+fil_movimiento, col_personaje+col_movimiento)){
         posicionar_personaje(&(*juego).homero.posicion, fil_movimiento, col_movimiento);
 
-        // si el movimiento es el pergamino lo lleva con el
-        if (es_posicion_pergamino((*juego).niveles[nivel_actual].pergamino, fil_personaje, col_personaje)){
-            llevar_pergamino(&(*juego).niveles[nivel_actual].pergamino, &(*juego).homero.recolecto_pergamino, fil_movimiento, col_movimiento);
+        if (es_posicion_pergamino((*juego).niveles[nivel_actual].pergamino, fil_personaje+fil_movimiento, col_personaje+col_movimiento)){
+            (*juego).camino_visible = true;
+            (*juego).homero.recolecto_pergamino = true;
+            printf("tienes un pergamino");
+
         } else {
-            (*juego).homero.recolecto_pergamino = false;
+            (*juego).camino_visible = false;
         }
         
         if (es_posicion_herramienta((*juego).niveles[nivel_actual].herramientas, (*juego).niveles[nivel_actual].tope_herramientas, fil_personaje+fil_movimiento, col_personaje+col_movimiento)){
@@ -557,18 +546,16 @@ void dirigir_movimiento(juego_t *juego, int fil_movimiento, int col_movimiento){
 
             indice_posic_herramienta = busca_posicion_herramienta((*juego).niveles[nivel_actual].herramientas,(*juego).niveles[nivel_actual].tope_herramientas, fil_personaje+fil_movimiento, col_personaje+col_movimiento);
             tomar_herramienta(&(*juego).homero.vidas_restantes, (*juego).niveles[nivel_actual].herramientas[indice_posic_herramienta]);
-            eliminar_herramienta((*juego).niveles[nivel_actual].herramientas, &(*juego).niveles[nivel_actual].tope_herramientas, indice_posic_herramienta);
-        
+            eliminar_herramienta((*juego).niveles[nivel_actual].herramientas, &(*juego).niveles[nivel_actual].tope_herramientas, indice_posic_herramienta);        
         }
         
         if (es_runa((*juego).niveles[nivel_actual].camino[0], fil_personaje+fil_movimiento, col_personaje+col_movimiento)){
 
             lanzar_bola_fuego(&(*juego).niveles[nivel_actual], &(*juego).niveles[nivel_actual].tope_camino);
             (*juego).camino_visible = true;
-        } else {
-            (*juego).camino_visible = false;
-            (*juego).homero.antorcha_encendida = false;
         }
+        
+        (*juego).homero.antorcha_encendida = false;
         
         if (es_posicion_obstaculos((*juego).niveles[nivel_actual].obstaculos, (*juego).niveles[nivel_actual].tope_obstaculos, fil_personaje+fil_movimiento, col_personaje+col_movimiento)){
             int indice_posic_obstaculo;
@@ -576,6 +563,8 @@ void dirigir_movimiento(juego_t *juego, int fil_movimiento, int col_movimiento){
             indice_posic_obstaculo = busca_posicion_herramienta((*juego).niveles[nivel_actual].obstaculos, (*juego).niveles[nivel_actual].tope_obstaculos, fil_personaje+fil_movimiento, col_personaje+col_movimiento);
             posicionar_pergamino((*juego).niveles[nivel_actual], &(*juego).niveles[nivel_actual].pergamino, (*juego).niveles[nivel_actual].tope_camino, (*juego).niveles[nivel_actual].camino );
             eliminar_herramienta((*juego).niveles[nivel_actual].obstaculos, &(*juego).niveles[nivel_actual].tope_obstaculos, indice_posic_obstaculo);
+            (*juego).homero.recolecto_pergamino = false;
+            printf("EL PERGAMINO CAMBIO DE POSICION, RECOGELO!");
         }
     
     } else if (es_posicion_pared((*juego).niveles[nivel_actual], (*juego).niveles[nivel_actual].tope_paredes, fil_personaje+fil_movimiento, col_personaje+col_movimiento)){
@@ -586,9 +575,6 @@ void dirigir_movimiento(juego_t *juego, int fil_movimiento, int col_movimiento){
     
     }
 
-
-    // no pertenece al camino ni a las paredes
-    // el movimiento no pertenece al camino resta una vida
 }
 
 
@@ -597,45 +583,41 @@ void realizar_jugada(juego_t* juego, char movimiento){
     int fil_movimiento = 0;
     int col_movimiento = 0;
     int nivel_actual = (*juego).nivel_actual+CORRECCION_NIVEL;
-    //realiza el pre-movimiento
+
     if (es_movimiento(movimiento)){
         valorar_movimiento(movimiento, &fil_movimiento, &col_movimiento);
         dirigir_movimiento(&(*juego), fil_movimiento, col_movimiento);
 
     } else if (es_herramienta(movimiento)){
-        /// H para hechizos
 
-        //SI LANZA HECHIZO ACTIVA CATAPULTA
         if ((movimiento == HECHIZO_REVELADOR) && ((*juego).homero.hechizos_reveladores > 0) ){
             (*juego).camino_visible = true;
             (*juego).homero.hechizos_reveladores -= 1;
             lanzar_bola_fuego(&(*juego).niveles[nivel_actual], &(*juego).niveles[nivel_actual].tope_camino);
         } 
-
+ 
         if ((movimiento == ANTORCHA) && ((*juego).homero.antorchas > 0)){
             (*juego).homero.antorcha_encendida = true;
             (*juego).homero.antorchas -= 1;
         }
-        // L para antorcha
-
     }
 }
 ////////////////////////////////////////////////////
 
-
-
-
+/*
+* Pre condiciones: -
+* Post condiciones: limpia la pantalla y imprime el mensaje de bienvenida al usuario.
+*/
 void mostrar_bienvenida(){
     system("clear");
     printf("%s\n%s\n%s\n", MSJ_DECORADOR, MSJ_BIENVENIDA, MSJ_DECORADOR);
 }
 
 /*
-* Pre condiciones: mapa debe estar inicializado
-* Post condiciones: carga paredes al mapa.
+* Pre condiciones: la matriz del mapa, vector de paredes deben estar inicializados (sin contenido), el tope de paredes debe ser > 0.
+* Post condiciones: carga las posiciones (fila, columna) de las paredes a la matriz del mapa.
 */
 void agregar_paredes(char mapa[MAX_FILAS][MAX_COLUMNAS], coordenada_t paredes[MAX_PAREDES], int tope_paredes){
-    //agregar paredes
     for (int i = 0; i < tope_paredes; i++){
         int fil_pared = paredes[i].fil;
         int col_pared = paredes[i].col;
@@ -644,11 +626,10 @@ void agregar_paredes(char mapa[MAX_FILAS][MAX_COLUMNAS], coordenada_t paredes[MA
 }
 
 /*
-* Pre condiciones: mapa debe ser inicializado
-* Post condiciones: agrega camino al mapa.
+* Pre condiciones: la matriz del mapa, vector de caminos deben estar inicializados, tope_camino debe ser >0.
+* Post condiciones: carga las posiciones(fila, columna) de los caminos a la matriz del mapa.
 */
 void agregar_camino(char mapa[MAX_FILAS][MAX_COLUMNAS], coordenada_t camino[MAX_CAMINO], int tope_camino){
-    //agregar camino
     for (int i = 0; i < tope_camino; i++){
         int fil_camino = camino[i].fil;
         int col_camino = camino[i].col;
@@ -657,13 +638,15 @@ void agregar_camino(char mapa[MAX_FILAS][MAX_COLUMNAS], coordenada_t camino[MAX_
     }
 }
 
-
+/*
+* Pre condiciones: la matriz del mapa, vector de caminos deben estar inicializados, tope_camino debe ser > 0, la posicion del personaje debe ser dentro de los limites de la matriz mapa.  
+* Post condiciones: carga las posiciones(fila, columna) de los caminos a la matriz del mapa con un RANGO_MANHATTAN = 3 o el valor declarado.
+*/
 void agregar_camino_manhattan(char mapa[MAX_FILAS][MAX_COLUMNAS], coordenada_t camino[MAX_CAMINO], int tope_camino, coordenada_t posicion){
     int fil_homero = posicion.fil;
     int col_homero = posicion.col;
-    int rango = RANGO_MAMHATTAN;
+    int rango = RANGO_MANHATTAN;
 
-    // H(0,0) --> M(1,2)
     for (int i = 0; i < tope_camino; i++){
 
         if(((fil_homero - camino[i].fil) <= rango) && ((col_homero - camino[i].col <= rango)) ){
@@ -675,7 +658,6 @@ void agregar_camino_manhattan(char mapa[MAX_FILAS][MAX_COLUMNAS], coordenada_t c
                 if ((fil_coordenada + col_coordenada) <= rango && (fil_coordenada - col_coordenada) >= -rango ){
 
                     if ((fil_coordenada - col_coordenada) <= rango && (fil_coordenada + col_coordenada) >= -rango ){
-
                         mapa[camino[i].fil][camino[i].col] = CAMINO;
                     }
                 }                    
@@ -685,8 +667,8 @@ void agregar_camino_manhattan(char mapa[MAX_FILAS][MAX_COLUMNAS], coordenada_t c
 }
 
 /*
-* Pre condiciones: mapa debe ser inicializado
-* Post condiciones: agrega el peronaje al mapa.
+* Pre condiciones: la matriz de mapa, el personaje deben ser inicializado.
+* Post condiciones: carga en la posicion de coordendas (fila, columna) el personaje segun su ubicacion. 
 */
 void agregar_personaje(char mapa[MAX_FILAS][MAX_COLUMNAS], personaje_t homero){
     int fil_homero = homero.posicion.fil;
@@ -695,14 +677,11 @@ void agregar_personaje(char mapa[MAX_FILAS][MAX_COLUMNAS], personaje_t homero){
     mapa[fil_homero][col_homero] = HOMERO;
 }
 
-
-
 /*
-* Pre condiciones: mapa, juego debe estar inicializado
-* Post condicones: carga la runa, altar, pergamino en el mapa 
+* Pre condiciones: la matriz del mapa, vector de niveles deben estar inicializado, el nivel_actual debe ser >= 0.
+* Post condicones: carga en la posicion de coordendas de la matriz mapa los items (la runa, altar, pergamino) del nivel_actual.  
 */
 void agregar_items(char mapa[MAX_FILAS][MAX_COLUMNAS], nivel_t niveles[], int nivel_actual){
-    // Runa (donde se encuntra homero)
     int tope_camino = niveles[nivel_actual].tope_camino;
 
     int camino_inicial_fil = niveles[nivel_actual].camino[0].fil;
@@ -710,13 +689,11 @@ void agregar_items(char mapa[MAX_FILAS][MAX_COLUMNAS], nivel_t niveles[], int ni
 
     mapa [camino_inicial_fil][camino_inicial_col] = RUNA;
 
-    // altar (en la ultima posicion del camino)
     int camino_final_fil = niveles[nivel_actual].camino[tope_camino-1].fil;
     int camino_final_col = niveles[nivel_actual].camino[tope_camino-1].col;
 
     mapa [camino_final_fil][camino_final_col] = ALTAR;
 
-    // pergamino esta en posicion ramdom
     int fil_pergamino = niveles[nivel_actual].pergamino.fil;
     int col_pergamino = niveles[nivel_actual].pergamino.col;
 
@@ -724,11 +701,10 @@ void agregar_items(char mapa[MAX_FILAS][MAX_COLUMNAS], nivel_t niveles[], int ni
 }
 
 /*
-* Pre condiciones: mapa, juego deben estar inicializados
-* Post condiciones: FALTA HACERRRRRR!!!!!!!!!!!!!!!!!
+* Pre condiciones: la matriz del mapa, vector de niveles deben estar inicializados, nivel_actual debe ser >= 0, tope > 0;
+* Post condiciones: agrega en las coordenadas del mapa, los obstaculos(catapulta, piedra del catigo) del nivel_actual.
 */
 void agregar_obstaculos(char mapa[MAX_FILAS][MAX_COLUMNAS], nivel_t niveles[], int nivel_actual, int tope_obstaculos){
-    // piedras
     for (int i = 0; i < tope_obstaculos; i++){
         int piedra_fil = niveles[nivel_actual].obstaculos[i].posicion.fil;
         int piedra_col = niveles[nivel_actual].obstaculos[i].posicion.col; 
@@ -741,8 +717,8 @@ void agregar_obstaculos(char mapa[MAX_FILAS][MAX_COLUMNAS], nivel_t niveles[], i
 }
 
 /*
-* Pre condiciones: mapa, juego deben estar inicializados
-* Post condiciones: FALTA HACERRRRRR!!!!!!!!!!!!!!!!!
+* Pre condiciones: la matriz del mapa, vector de niveles deben estar inicializados, nivel_actual debe ser >=0, tope_herramientas > 0;
+* Post condiciones: agrega a la matriz del mapa en las coordenadas de la posicion (fila, columna) los herramientas segun el nivel_actual.
 */
 void agregar_herramientas(char mapa[MAX_FILAS][MAX_COLUMNAS], nivel_t niveles[], int nivel_actual, int tope_herramientas){
     
@@ -755,13 +731,11 @@ void agregar_herramientas(char mapa[MAX_FILAS][MAX_COLUMNAS], nivel_t niveles[],
 }
 
 
-
 /*
-* Pre condiciones: mapa, juego deben estar inicializados
-* Post condiciones: crea un mapa del juego
+* Pre condiciones: la matriz del mapa y el juego deben estar incializados, nivel_actual debe ser >= 0.
+* Post condiciones: crea el mapa del juego que contiene (paredes, caminos, personaje, pergaminos, herramientas) segun corresponda el nivel.
 */
-void crear_mapa(char mapa[MAX_FILAS][MAX_COLUMNAS], juego_t juego){
-    int nivel_actual = juego.nivel_actual+CORRECCION_NIVEL;
+void crear_mapa(char mapa[MAX_FILAS][MAX_COLUMNAS], juego_t juego, int nivel_actual){
     
     for (int i = 0; i < MAX_FILAS; i++){
         for(int j = 0; j < MAX_COLUMNAS; j++){
@@ -780,13 +754,10 @@ void crear_mapa(char mapa[MAX_FILAS][MAX_COLUMNAS], juego_t juego){
 
     agregar_personaje(mapa, juego.homero);
     
-    /// agregar items (Runa, altar, pergamino)
     agregar_items(mapa, juego.niveles, juego.nivel_actual+CORRECCION_NIVEL);
 
-    /// agregar obtaculos pidra castigo, obstaculos
     agregar_obstaculos(mapa, juego.niveles, nivel_actual, juego.niveles[nivel_actual].tope_obstaculos);
 
-    // agrega totem
     agregar_herramientas (mapa,juego.niveles, nivel_actual, juego.niveles[nivel_actual].tope_herramientas);
 }
 
@@ -798,10 +769,10 @@ int estado_nivel(nivel_t nivel, personaje_t homero){
     int altar_fil = nivel.camino[tope-1].fil;
     int altar_col = nivel.camino[tope-1].col;
 
-    int pergamino_fil = nivel.pergamino.fil;
-    int pergamino_col = nivel.pergamino.col;
+    int fil_personaje = homero.posicion.fil;
+    int col_personaje = homero.posicion.col;
 
-    if (pergamino_fil == altar_fil && pergamino_col == altar_col){
+    if ((fil_personaje == altar_fil && col_personaje == altar_col) && (homero.recolecto_pergamino)){
         return 1;
     } else {
         return 0;
@@ -844,20 +815,17 @@ void mostrar_mapa(char mapa[MAX_FILAS][MAX_COLUMNAS]){
 
 void mostrar_menu (int numero_vidas, int numero_hechizos, int numero_antorchas){
     printf("-----------------------------------------------------------\n\n");
-    printf("Vidas: %i             \nHechizo revelador: %i              presionar (H) para utilizar\nAntorchas: %i                     presionar (L) para utilizar\n\n", numero_vidas, numero_hechizos, numero_antorchas);
+    printf("Vidas: %i             \nHechizo revelador: %i             presionar (H) para utilizar\nAntorchas: %i                     presionar (L) para utilizar\n\n", numero_vidas, numero_hechizos, numero_antorchas);
 }
 /////////////////////////////////////////////////////////////////////
 
 void mostrar_juego(juego_t juego){
     char mapa[MAX_FILAS][MAX_COLUMNAS];
-    int numero_vidas = juego.homero.vidas_restantes;
-    int numero_hechizos = juego.homero.hechizos_reveladores;
-    int numero_antorchas = juego.homero.antorchas;
-    
-    crear_mapa (mapa, juego);
     mostrar_bienvenida();
+
+    crear_mapa (mapa, juego, juego.nivel_actual+CORRECCION_NIVEL);
     mostrar_mapa(mapa);
-    mostrar_menu(numero_vidas, numero_hechizos, numero_antorchas);
+    mostrar_menu(juego.homero.vidas_restantes, juego.homero.hechizos_reveladores, juego.homero.antorchas);
 }
 
 //////////////////////////////////////////////////////////////////////////////
