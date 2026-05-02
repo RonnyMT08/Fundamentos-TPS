@@ -3,12 +3,28 @@
 #include <time.h>   // Para obtener una semilla desde el reloj
 #include <stdio.h>
 
-const int CORRECCION_NIVELC = -1; //SI EL NIVEL INICIO ES 0 -> CORERCCION =0 (1)-->1
+const char* MSJ_EMOJI_DIRECCIONES = "Movimientos: \u2B06\uFE0F (W)     \u2B07\uFE0F (S)    \u2B05\uFE0F (A)     \u27A1\uFE0F (D)";
+const char* MSJ_ELIMINACION = "\
+########  ######## ########  ########  ####  ######  ######## ######## \n\
+##     ## ##       ##     ## ##     ##  ##  ##    ##    ##    ##       \n\
+##     ## ##       ##     ## ##     ##  ##  ##          ##    ##       \n\
+########  ######   ########  ##     ##  ##   ######     ##    ######   \n\
+##        ##       ##   ##   ##     ##  ##        ##    ##    ##       \n\
+##        ##       ##    ##  ##     ##  ##  ##    ##    ##    ##       \n\
+##        ######## ##     ## ########  ####  ######     ##    ######## \n";
 
-const char* MSJ_MOVIMIENTOS = "      -W-          -S-            -A-           -D- \n     Arriba       Abajo        Izquierda      Derecha \n";
-const char* MSJ_ELIMINACION = "\n\nELIMINADO...!!\n\nTe quedaste sin vidas\n";
-const char* MSJ_JUEGO_GANADO = "\n En hora buena...\n\n tú ascención fue aprobada, pronto nos comunicaremos contigo\n";
-const char* MSJ_INSTRUCCIONES = "El movimiento es invalido. \n+++\nLas opciones son: \nW -Para moverse hacia arriba \nS -Para moverse hacia abajo \nA -Para moverse hacia la izquierda \nD -Para moverse hacia la derecha \nL -Para activar la antorcha \nH -Para activar el hechizo revelador\n+++";
+ 
+const char* MSJ_JUEGO_GANADO = "\
+ ######      ###    ##    ##    ###     ######  ######## ######## \n\
+##    ##    ## ##   ###   ##   ## ##   ##    ##    ##    ##       \n\
+##         ##   ##  ####  ##  ##   ##  ##          ##    ##       \n\
+##   #### ##     ## ## ## ## ##     ##  ######     ##    ######   \n\
+##    ##  ######### ##  #### #########       ##    ##    ##       \n\
+##    ##  ##     ## ##   ### ##     ## ##    ##    ##    ##       \n\
+ ######   ##     ## ##    ## ##     ##  ######     ##    ######## \n";
+
+const char* MSL_MOVIMIENTO_INVALIDO = "\u26A0\uFE0F  El movimiento es invalido. \U0001f4dd Verifique los movimientos validos";
+
 /*
 Pre condiciones: -
 Post condiciones: devuelve true si el 'movimiento' es H, L, D, S, A ó W. False en caso contrario.
@@ -16,47 +32,47 @@ Post condiciones: devuelve true si el 'movimiento' es H, L, D, S, A ó W. False 
 bool es_opcion(char movimiento){
     return(movimiento == 'H' || movimiento == 'L' || movimiento == 'D' || movimiento == 'S' || movimiento == 'A' || movimiento == 'W');
 }
+
 /*
 Pre condiciones: -
 Post condiciones: guarda en 'movimiento' el caracter ingresado por el usuario, movimiento debe ser  H, L, D, S, A, W. en caso de nos er ninguna de las anterioeres opciones vuelve a pedir otro caracter. 
 */
-void pedir_movimiento(char* movimiento){
-    printf("%s\n", MSJ_MOVIMIENTOS);
+void pedir_movimiento(juego_t juego, char* movimiento){
+    printf("%s \n", MSJ_EMOJI_DIRECCIONES);
     scanf(" %c", movimiento);
     while (!es_opcion(*movimiento) ){
-        printf("%s\n", MSJ_INSTRUCCIONES);
+        mostrar_juego(juego);
+        printf("%s \n%s\n",MSJ_EMOJI_DIRECCIONES, MSL_MOVIMIENTO_INVALIDO); 
         scanf(" %c", movimiento);
     }
 }
 
 int main(){
     srand ( (unsigned)time(NULL));
+    
     juego_t juego;
-
     inicializar_juego(&juego);
-    int nivel = juego.nivel_actual+CORRECCION_NIVELC;
-
-    while ((estado_juego(juego) == 0) && ( nivel < 3)){
+    
+    int posicion_nivel_actual = juego.nivel_actual - 1; 
+    while ((estado_juego(juego) == 0)){
         mostrar_juego(juego);
         
         char movimiento = ' ';
-        pedir_movimiento(&movimiento);
+        pedir_movimiento(juego, &movimiento);
         realizar_jugada(&juego, movimiento);
 
-        if (estado_nivel((juego).niveles[nivel], juego.homero) == 1){
+        if (estado_nivel((juego).niveles[posicion_nivel_actual], juego.homero) == 1){
             cambiar_nivel(&(juego));
-            nivel = juego.nivel_actual+CORRECCION_NIVELC;
-            juego.camino_visible = true;
         }
+        posicion_nivel_actual = juego.nivel_actual - 1;  
     }
 
     if (estado_juego(juego) == -1){
         system("clear");
         printf("%s", MSJ_ELIMINACION);
-    } else {
+    } else if (estado_juego(juego) == 1 && juego.homero.vidas_restantes >= 0){
         system("clear");
         printf("%s", MSJ_JUEGO_GANADO);
     }
-    
     return 0;
 }
