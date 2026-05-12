@@ -304,10 +304,11 @@ void inicializar_pergaminos(coordenada_t caminos[MAX_CAMINO], int tope_caminos, 
 * Post condicione:
     -> Carga en 'objeto' los valores 'tipo_dado', 'fila_dada', 'columna_dada'.
 */
-void cargar_objeto(objeto_t* objeto, char tipo_dado, int fila_dada, int columna_dada){
+void cargar_objeto(objeto_t* objeto, int* tope_objeto, char tipo_dado, int fila_dada, int columna_dada){
     (*objeto).tipo = tipo_dado;
     (*objeto).posicion.fil = fila_dada;
     (*objeto).posicion.col = columna_dada;
+    (*tope_objeto) ++;
 }
 
 /*
@@ -326,8 +327,7 @@ void inicializar_herramientas (nivel_t* nivel){
             fil_totem = numero_aleatorio(MAX_FILAS);
             col_totem = numero_aleatorio(MAX_COLUMNAS);
         }
-        cargar_objeto(&(*nivel).herramientas[j], TOTEM, fil_totem, col_totem);
-        (*nivel).tope_herramientas++;
+        cargar_objeto(&(*nivel).herramientas[j], &(*nivel).tope_herramientas, TOTEM, fil_totem, col_totem);
     }
     
 }
@@ -351,9 +351,7 @@ void inicializar_piedras_castigo(nivel_t* nivel){
             fil_piedra = numero_aleatorio(MAX_FILAS);
             col_piedra = numero_aleatorio(MAX_COLUMNAS);
         }
-
-        cargar_objeto(&((*nivel)).obstaculos[j], PIEDRA_CASTIGO, fil_piedra, col_piedra);
-        (*nivel).tope_obstaculos ++;
+        cargar_objeto(&((*nivel)).obstaculos[j], &(*nivel).tope_obstaculos, PIEDRA_CASTIGO, fil_piedra, col_piedra);
     }
 }
 
@@ -374,8 +372,7 @@ void inicializar_catapultas(nivel_t* nivel){
         fil_catapulta = numero_aleatorio(MAX_FILAS);
         col_catapulta = numero_aleatorio(MAX_COLUMNAS);
     }
-    cargar_objeto(&((*nivel)).obstaculos[indice_catapulta], CATAPULTA, fil_catapulta, col_catapulta);    
-    (*nivel).tope_obstaculos ++;
+    cargar_objeto(&((*nivel)).obstaculos[indice_catapulta], &(*nivel).tope_obstaculos, CATAPULTA, fil_catapulta, col_catapulta);    
 }
 
 /*
