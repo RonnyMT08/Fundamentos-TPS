@@ -1,6 +1,6 @@
 #include "ascension_magios.h"
-#include <stdlib.h> // Para usar rand, limpiar terminal, etc.
-#include <time.h>   // Para obtener una semilla desde el reloj
+#include <stdlib.h> 
+#include <time.h> 
 #include <stdio.h>
 
 const char* MSJ_EMOJI_DIRECCIONES = "Movimientos: \u2B06\uFE0F (W)     \u2B07\uFE0F (S)    \u2B05\uFE0F (A)     \u27A1\uFE0F (D)";
