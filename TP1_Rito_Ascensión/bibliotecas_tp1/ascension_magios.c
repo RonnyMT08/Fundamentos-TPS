@@ -140,7 +140,7 @@ bool es_posicion_objeto(objeto_t objetos[MAX_ELEMENTOS], int tope_objetos, int f
     
     bool en_objeto = false;
     int indice_objeto = 0;
-    while(!en_objeto && indice_objeto < tope_objetos){
+    while(!en_objeto && indice_objeto < tope_objetos && tope_objetos > 0){
 
         if(objetos[indice_objeto].posicion.fil == fila_dada && objetos[indice_objeto].posicion.col == columna_dada){
             en_objeto = true;
@@ -473,16 +473,18 @@ bool es_herramienta(char movimiento){
     -> Devuelve el valor del indice de la posicion en la que se encuentra el 'objeto'.
 */
 int busca_indice_objeto(objeto_t objetos[MAX_ELEMENTOS], int tope_objetos, int fil_movimiento, int col_movimiento){
-    int posicion = -1;
+    int posicion = 0;
     bool posicion_encontrada = false;
     
     while(!posicion_encontrada && (posicion < tope_objetos)) {
-
         if (objetos[posicion].posicion.fil == fil_movimiento && objetos[posicion].posicion.col == col_movimiento){
             posicion_encontrada = true;
         } else {
-            posicion ++;
+            posicion++;
         }
+    }
+    if (posicion_encontrada == false){
+        return -1; 
     }
     return posicion;
 }
