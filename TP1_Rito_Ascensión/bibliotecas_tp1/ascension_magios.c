@@ -427,7 +427,6 @@ void cambiar_nivel(juego_t* juego) {
         cargar_posicion(&(*juego).homero.posicion, fila_personaje, columna_personaje );
         cargar_estado_nivel(&(*juego).homero.antorcha_encendida, &(*juego).homero.recolecto_pergamino, &(*juego).camino_visible, &(*juego).homero.antorchas);
     }    
-
 }
 
 /*
@@ -656,8 +655,7 @@ void lanzar_bola_fuego( nivel_t* nivel, int* tope_caminos, coordenada_t posicion
         if (indice_posicion_camino != -1){
             eliminar_camino((*nivel).camino, &(*nivel).tope_camino, indice_posicion_camino);        
         }
-    }
-    
+    }   
 }
 
 
@@ -713,7 +711,6 @@ void posicionar_pergamino(nivel_t nivel, coordenada_t* posicion_pergamino, int t
     }
     (*posicion_pergamino).fil = fil_pergamino;
     (*posicion_pergamino).col = col_pergamino;
-
 }
 
 /*
@@ -739,7 +736,6 @@ void desactivar_herramientas(bool* antorcha_encendida, bool* camino_visible){
     (*camino_visible) = false;
 }
 
-
 /*
 * Pre condiciones: 
     -> 'juego' y 'nivel' deben estar inicializados.
@@ -747,7 +743,7 @@ void desactivar_herramientas(bool* antorcha_encendida, bool* camino_visible){
 * Post condiciones: 
     -> Carga en 'juego' y 'nivel' la acción correspondiente a la posicion(camino) del personaje(pergamino, runa, herramienta, obstaculo, camino)
 */
-void accionar_camino(juego_t* juego, nivel_t* nivel, int fila_personaje, int columna_personaje){
+void accionar_elemento(juego_t* juego, nivel_t* nivel, int fila_personaje, int columna_personaje){
     if (es_posicion_elemento((*nivel).pergamino, fila_personaje, columna_personaje)){
         recoger_pergamino( &(*nivel).pergamino, (*nivel).camino, (*nivel).tope_camino);
         guardar_pergamino(&(*juego).camino_visible, &(*juego).homero.antorcha_encendida, &(*juego).homero.recolecto_pergamino);
@@ -767,8 +763,11 @@ void accionar_camino(juego_t* juego, nivel_t* nivel, int fila_personaje, int col
             eliminar_objeto((*nivel).obstaculos, &(*nivel).tope_obstaculos, indice_obstaculo);
             tirar_pergamino(&(*juego).camino_visible, &(*juego).homero.antorcha_encendida, &(*juego).homero.recolecto_pergamino);
         }   
-    }  else {
+    } else if (es_posicion_estructura((*nivel).camino, (*nivel).tope_camino, fila_personaje, columna_personaje)) {
         desactivar_herramientas(&(*juego).homero.antorcha_encendida, &(*juego).camino_visible);
+    } else {
+        desactivar_herramientas(&(*juego).homero.antorcha_encendida, &(*juego).camino_visible);
+        salir_camino(&(*juego).homero.vidas_restantes, &(*juego).homero.antorcha_encendida, &(*juego).camino_visible);
     }
 }
 
@@ -777,26 +776,12 @@ void accionar_camino(juego_t* juego, nivel_t* nivel, int fila_personaje, int col
     -> 'juego' y 'nivel' deben estar inicializados.
     -> El valor de 'fila_personaje' debe estar entre 0-190 y 'columna_personaje' entre 0-29.
 * Post condiciones: 
-    -> Carga en 'juego' y 'nivel' la acción correspondiente a la posicion(fuera de camino) del personaje(herramienta, obstaculo, fuera_camino)
+    -> Carga en 'juego' y 'nivel' realizando eventos correspondiente a la posicion(fuera de camino) del personaje(herramienta, obstaculo, fuera_camino)
 */
-void accionar_fuera_camino(juego_t*juego, nivel_t* nivel, int fila_personaje, int columna_personaje){
-    if (es_posicion_objeto((*nivel).herramientas, (*nivel).tope_herramientas, fila_personaje, columna_personaje) ){
-        int indice_herramienta = busca_indice_objeto((*nivel).herramientas,( *nivel).tope_herramientas, fila_personaje, columna_personaje);
-        if (indice_herramienta != -1){
-            recoger_herramienta(&(*juego).homero.vidas_restantes, &(*nivel), indice_herramienta, fila_personaje, columna_personaje);
-            desactivar_herramientas(&(*juego).homero.antorcha_encendida, &(*juego).camino_visible);
-        }
-    } else if (es_posicion_objeto((*nivel).obstaculos, (*nivel).tope_obstaculos-1, fila_personaje, columna_personaje)){
-        int indice_obstaculo = busca_indice_objeto((*nivel).obstaculos, (*nivel).tope_obstaculos, fila_personaje, columna_personaje);
-        if (indice_obstaculo != -1){
-            posicionar_pergamino((*nivel), &(*nivel).pergamino, (*nivel).tope_camino );
-            eliminar_objeto((*nivel).obstaculos, &(*nivel).tope_obstaculos, indice_obstaculo);
-            tirar_pergamino(&(*juego).camino_visible, &(*juego).homero.antorcha_encendida, &(*juego).homero.recolecto_pergamino);
-        }
-    }  else {
-        desactivar_herramientas(&(*juego).homero.antorcha_encendida, &(*juego).camino_visible);
-        salir_camino(&(*juego).homero.vidas_restantes, &(*juego).homero.antorcha_encendida, &(*juego).camino_visible);
-    }
+void realizar_evento(juego_t* juego, nivel_t* nivel){
+    int fila_personaje = (*juego).homero.posicion.fil;
+    int columna_personaje = (*juego).homero.posicion.col;
+    accionar_elemento(&(*juego), &(*nivel), fila_personaje, columna_personaje);
 }
 
 /*
@@ -812,12 +797,8 @@ void dirigir_movimiento(nivel_t* nivel, coordenada_t* posicion_personaje, juego_
     int nueva_fil_personaje = fil_movimiento + (*posicion_personaje).fil;
     int nueva_col_personaje = col_movimiento + (*posicion_personaje).col;
     if (es_posicion_mapa(nueva_fil_personaje, nueva_col_personaje)  && !es_posicion_estructura((*nivel).paredes, (*nivel).tope_paredes, nueva_fil_personaje, nueva_col_personaje)){
-        if (es_posicion_estructura((*nivel).camino, (*nivel).tope_camino, nueva_fil_personaje, nueva_col_personaje)){
-            accionar_camino(&(*juego), &(*nivel), nueva_fil_personaje, nueva_col_personaje);
-        } else if (!es_posicion_estructura((*nivel).camino, (*nivel).tope_camino, nueva_fil_personaje, nueva_col_personaje)){
-            accionar_fuera_camino(&(*juego), &(*nivel), nueva_fil_personaje, nueva_col_personaje); 
-        }
-        posicionar_personaje(&(*juego).homero.posicion, fil_movimiento, col_movimiento);
+        cargar_posicion(&(*juego).homero.posicion, nueva_fil_personaje, nueva_col_personaje);
+        realizar_evento(&(*juego), &(*nivel));
     }
 }
 
