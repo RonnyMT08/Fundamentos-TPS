@@ -53,7 +53,7 @@ int main(){
     juego_t juego;
     inicializar_juego(&juego);
     
-    int posicion_nivel_actual = juego.nivel_actual - 1; 
+    int indice_nivel = juego.nivel_actual - 1;
     while ((estado_juego(juego) == 0)){
         mostrar_juego(juego);
         
@@ -61,10 +61,10 @@ int main(){
         pedir_movimiento(juego, &movimiento);
         realizar_jugada(&juego, movimiento);
 
-        if (estado_nivel((juego).niveles[posicion_nivel_actual], juego.homero) == 1){
+        if (estado_nivel((juego).niveles[indice_nivel], juego.homero) == 1){
             cambiar_nivel(&(juego));
         }
-        posicion_nivel_actual = juego.nivel_actual - 1;  
+        indice_nivel = juego.nivel_actual - 1;  
     }
 
     if (estado_juego(juego) == -1){

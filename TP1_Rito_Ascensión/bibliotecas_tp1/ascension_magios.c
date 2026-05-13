@@ -1,11 +1,9 @@
-//gcc juego.c ascension_magios.c utiles.o -o juego -std=c99 -Wall -Wconversion -Werror -lm
-
 #include "ascension_magios.h"
 #include "utiles.h"
 #include <string.h>
 #include <stdio.h>
-#include <stdlib.h> // Para usar rand, limpiar terminal, etc.
-#include <time.h>   // Para obtener una semilla desde el reloj
+#include <stdlib.h> 
+#include <time.h> 
 
 #define MAX_CARACTERES 200
 
@@ -805,7 +803,7 @@ void accionar_camino(juego_t* juego, nivel_t* nivel, int fila_personaje, int col
 * Post condiciones: 
     -> Carga en 'juego' y 'nivel' la acción correspondiente a la posicion(fuera de camino) del personaje(herramienta, obstaculo, fuera_camino)
 */
-void accionar_posicion(juego_t*juego, nivel_t* nivel, int fila_personaje, int columna_personaje){
+void accionar_fuera_camino(juego_t*juego, nivel_t* nivel, int fila_personaje, int columna_personaje){
 
     if (es_posicion_objeto((*nivel).herramientas, (*nivel).tope_herramientas, fila_personaje, columna_personaje) ){
         int indice_herramienta = busca_indice_objeto((*nivel).herramientas,( *nivel).tope_herramientas, fila_personaje, columna_personaje);
@@ -847,7 +845,7 @@ void dirigir_movimiento(nivel_t* nivel, coordenada_t* posicion_personaje, juego_
         if (es_posicion_estructura((*nivel).camino, (*nivel).tope_camino, nueva_fil_personaje, nueva_col_personaje)){
             accionar_camino(&(*juego), &(*nivel), nueva_fil_personaje, nueva_col_personaje);
         } else if (!es_posicion_estructura((*nivel).camino, (*nivel).tope_camino, nueva_fil_personaje, nueva_col_personaje)){
-            accionar_posicion(&(*juego), &(*nivel), nueva_fil_personaje, nueva_col_personaje); 
+            accionar_fuera_camino(&(*juego), &(*nivel), nueva_fil_personaje, nueva_col_personaje); 
         }
         posicionar_personaje(&(*juego).homero.posicion, fil_movimiento, col_movimiento);
     }
