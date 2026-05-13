@@ -37,12 +37,20 @@ const int NIVELES_MAXIMO = 3;
 const int RANGO_MANHATTAN = 3;
 const int MAX_MENSAJES_INFORMATIVO = 6;
 
+const int MIN_VIDAS = 0;
 const int VIDAS_INICIALES = 5;
 const int ANTORCHAS_INICIALES = 5;
 const int HECHIZOS_REVELADORES_INICIALES = 5;
 const int PERGAMINOS_INICIALES = 3;
 const int TOTEMS_INICIALES = 5;
 const int PIEDRAS_CASTIGO_INCIALES = 10;
+
+const int NIVEL_GANADO = 1;
+const int NIVEL_JUGANDO = 0;
+
+const int JUEGO_PERDIDO = -1;
+const int JUEGO_GANADO = 1;
+const int JUGANDO = 0;
 
 const char HOMERO = 'H';
 const char PARED = 'X';
@@ -89,7 +97,7 @@ typedef struct emoji {
     -> Devuele un valor aleatorio dentro del rango de 0 y el ('maximo_exclusivo' - 1).
 */
 int numero_aleatorio(int maximo_exclusivo){
-    int numero = rand() % (maximo_exclusivo-1);
+    int numero = rand() % maximo_exclusivo;
     return numero;
 }
 
@@ -397,7 +405,7 @@ void inicializar_obstaculos(nivel_t* nivel){
 void inicializar_niveles(nivel_t niveles[MAX_NIVELES], int tope_niveles){
 
     for(int i = 0; i < tope_niveles; i++){
-        inicializar_pergaminos( niveles[i].camino, niveles[i].tope_camino, &(niveles[i]).pergamino );
+        inicializar_pergaminos( niveles[i].camino, niveles[i].tope_camino, &niveles[i].pergamino );
         inicializar_herramientas( &niveles[i]);
         inicializar_obstaculos(&niveles[i]);
     }
@@ -498,14 +506,18 @@ int busca_indice_objeto(objeto_t objetos[MAX_ELEMENTOS], int tope_objetos, int f
     -> Devuelve el valor del indice de la posicion en la que se encuentra el camino.
 */
 int busca_indice_posicion(coordenada_t posiciones[MAX_CAMINO], int tope_posiciones, int fil_camino, int col_camino){
-    int indice_posicion = -1;
+    int indice_posicion = 0;
     bool posicion_encontrada = false;
     
     while((!posicion_encontrada) && (indice_posicion < tope_posiciones)){
-        indice_posicion ++;
 
         if (posiciones[indice_posicion].fil == fil_camino && posiciones[indice_posicion].col == col_camino){
             posicion_encontrada = true;
+        } else {
+            indice_posicion++;
+        }
+        if (!posicion_encontrada == false){
+            return -1;
         }
     }
     return indice_posicion;
@@ -880,7 +892,7 @@ void realizar_jugada(juego_t* juego, char movimiento){
     -> Carga en 'nota' un mensaje dee forma aleatoria entre (primer o sexto) mensaje.
 */
 void mostrar_mensaje_informacion(char nota[MAX_CARACTERES]){
-    int numero_mensaje = numero_aleatorio(MAX_MENSAJES_INFORMATIVO-1);
+    int numero_mensaje = numero_aleatorio(MAX_MENSAJES_INFORMATIVO);
     switch (numero_mensaje){
     case 0:
         strcpy(nota, MSJ_INFORMATIVO1);
@@ -1148,30 +1160,28 @@ int estado_nivel(nivel_t nivel, personaje_t homero){
     int col_personaje = homero.posicion.col;
 
     if ((fil_personaje == altar_fil && col_personaje == altar_col) && (homero.recolecto_pergamino)){
-        return 1;
+        return NIVEL_GANADO;
     } else {
-        return 0;
+        return NIVEL_JUGANDO;
     }
 }
 
 int estado_juego(juego_t juego){
-  //  int ganado = 1;
-    int perdido = -1;
-    int jugando = 0;
-    int ganado = 1;
+
     int vidas = juego.homero.vidas_restantes;
     int indice_nivel = (juego.nivel_actual)-1;
     int nivel_actual = (juego).nivel_actual;
+    
     int posicion_altar = juego.niveles[indice_nivel].tope_camino-1;
     int fil_homero = juego.homero.posicion.fil;
     int col_homero = juego.homero.posicion.col;
 
-    if ((vidas >= 0) && (nivel_actual == 3 && juego.homero.recolecto_pergamino) && (es_posicion_elemento(juego.niveles[indice_nivel].camino[posicion_altar], fil_homero, col_homero))){
-        return ganado;
-    } else if ((nivel_actual < 4) && (vidas <= 0)){
-        return perdido;
+    if ((vidas >= MIN_VIDAS) && (nivel_actual == MAX_NIVELES && juego.homero.recolecto_pergamino) && (es_posicion_elemento(juego.niveles[indice_nivel].camino[posicion_altar], fil_homero, col_homero))){
+        return JUEGO_GANADO;
+    } else if ((nivel_actual <= MAX_NIVELES) && (vidas <= MIN_VIDAS)){
+        return JUEGO_PERDIDO;
     } else {
-        return jugando;
+        return JUGANDO;
     }
 
 }
