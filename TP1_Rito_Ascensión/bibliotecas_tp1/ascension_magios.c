@@ -680,7 +680,7 @@ void activar_runa(bool* camino_visible, bool* antorcha_encendida){
     -> Actualiza el vector de herramientas eliminando ordenadamente el valor de posicion en 'indice_herramienta'.
 */
 void recoger_herramienta(int* vidas_restantes, nivel_t* nivel, int indice_herramienta, int nueva_fila, int nueva_columna){
-    if (indice_herramienta != 0){
+    if (indice_herramienta != -1){
         tomar_herramienta(&(*vidas_restantes), (*nivel).herramientas[indice_herramienta]);
         eliminar_objeto((*nivel).herramientas, &(*nivel).tope_herramientas, indice_herramienta); 
     }
@@ -743,15 +743,10 @@ void accionar_elemento(juego_t* juego, nivel_t* nivel, int fila_personaje, int c
     if (es_posicion_elemento((*nivel).pergamino, fila_personaje, columna_personaje)){
         recoger_pergamino( &(*nivel).pergamino, (*nivel).camino, (*nivel).tope_camino);
         guardar_pergamino(&(*juego).camino_visible, &(*juego).homero.antorcha_encendida, &(*juego).homero.recolecto_pergamino);
-    } 
+    }
     if ( es_posicion_elemento((*nivel).camino[0], fila_personaje, columna_personaje) ){
         lanzar_bola_fuego(&(*nivel), &(*nivel).tope_camino, (*juego).homero.posicion);
         activar_runa(&(*juego).camino_visible, &(*juego).homero.antorcha_encendida);
-    } else if (es_posicion_estructura((*nivel).camino, (*nivel).tope_camino, fila_personaje, columna_personaje)) {
-        desactivar_herramientas(&(*juego).homero.antorcha_encendida, &(*juego).camino_visible);
-    } else {
-        desactivar_herramientas(&(*juego).homero.antorcha_encendida, &(*juego).camino_visible);
-        salir_camino(&(*juego).homero.vidas_restantes, &(*juego).homero.antorcha_encendida, &(*juego).camino_visible);
     }
 }
 /*
@@ -769,7 +764,7 @@ void accionar_objeto(juego_t* juego, nivel_t* nivel, int fila_personaje, int col
             recoger_herramienta(&(*juego).homero.vidas_restantes, &(*nivel), indice_herramienta, fila_personaje, columna_personaje);
             desactivar_herramientas(&(*juego).homero.antorcha_encendida, &(*juego).camino_visible);
         }
-    }
+    } 
     if (es_posicion_objeto((*nivel).obstaculos, (*nivel).tope_obstaculos-1, fila_personaje, columna_personaje)){
         int indice_obstaculo = busca_indice_objeto((*nivel).obstaculos, (*nivel).tope_obstaculos, fila_personaje, columna_personaje);
         if (indice_obstaculo != -1){
@@ -789,6 +784,13 @@ void accionar_objeto(juego_t* juego, nivel_t* nivel, int fila_personaje, int col
 void realizar_evento(juego_t* juego, nivel_t* nivel){
     int fila_personaje = (*juego).homero.posicion.fil;
     int columna_personaje = (*juego).homero.posicion.col;
+
+    if (es_posicion_estructura((*nivel).camino, (*nivel).tope_camino, fila_personaje, columna_personaje)) {
+        desactivar_herramientas(&(*juego).homero.antorcha_encendida, &(*juego).camino_visible);
+    } else {
+        desactivar_herramientas(&(*juego).homero.antorcha_encendida, &(*juego).camino_visible);
+        salir_camino(&(*juego).homero.vidas_restantes, &(*juego).homero.antorcha_encendida, &(*juego).camino_visible);
+    }
     accionar_objeto(&(*juego), &(*nivel), fila_personaje, columna_personaje);
     accionar_elemento(&(*juego), &(*nivel), fila_personaje, columna_personaje);
 }
