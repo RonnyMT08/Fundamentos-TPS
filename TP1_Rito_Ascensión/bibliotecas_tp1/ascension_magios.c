@@ -29,12 +29,12 @@ const int MIN_FIL_POSICION = 0;
 const int MIN_COL_POSICION = 0;
 const int MAX_FIL_POSICION = 20;
 const int MAX_COL_POSICION = 30;
+const int MAX_MENSAJES_INFORMATIVO = 6;
 
 const int NIVEL_INICIO = 1;
 const int NIVELES_MAXIMO = 3;
 const int RANGO_MANHATTAN = 3;
 const int VALOR_DESPLAZAMIENTO = 1;
-const int MAX_MENSAJES_INFORMATIVO = 6;
 
 const int MIN_VIDAS = 0;
 const int VIDAS_INICIALES = 5;
@@ -43,36 +43,22 @@ const int HECHIZOS_REVELADORES_INICIALES = 5;
 const int TOTEMS_INICIALES = 5;
 const int PIEDRAS_CASTIGO_INCIALES = 10;
 
+const int JUGANDO = 0;
 const int NIVEL_GANADO = 1;
 const int NIVEL_JUGANDO = 0;
-
-const int JUEGO_PERDIDO = -1;
 const int JUEGO_GANADO = 1;
-const int JUGANDO = 0;
+const int JUEGO_PERDIDO = -1;
 
+const char VACIO = ' ';
 const char HOMERO = 'H';
 const char PARED = 'X';
 const char CAMINO = 'C';
-const char VACIO = ' ';
 const char RUNA = 'U';
 const char ALTAR = 'A';
 const char PERGAMINO = 'P';
 const char TOTEM = 'T';
 const char PIEDRA_CASTIGO = 'R';
 const char CATAPULTA = 'F';
-
-const char* MSJ_DECORADOR = "------------------------------------------------------------";
-const char* MSJ_BIENVENIDA = "BIENVENIDO AL JUEGO DE ASCENCION DE MAGIOS";
-const char* MSJ_POSICION_RANURA = ":      Hola Homero (\U0001f9d4\u200D)... Ahora estas en la Runa(\u2721\uFE0F )      :\n:      obten el Pergamino(\U0001f4dc) y llevalo al Altar(\u26EA)!!     :";
-const char* MSJ_ALTAR_SIN_PERGAMINO   = ":   \u26A0\uFE0F   Prohibido el acceso del siguiente nivel..          :\n:       necesitas el Pergamino(\U0001f4dc)                         :";
-
-const char* MSJ_POSICION_FUERA_CAMINO = ": (\U0001f525)!!!HOMERO!!!! TE ESTAS QUEMANDO... vuelve al camino  :\n:         (perdiste una de tus vidas)                      :" ;
-const char* MSJ_INFORMATIVO1 = ":   \U0001f4dd  Las Piedras del Castigo(\U0001faa6) son molestas...!!      :\n:       activan la catapulta(\U0001f680) quitandote el pergamino   :";
-const char* MSJ_INFORMATIVO2 = ":   \U0001f4dd  Usar Hechizo Revelador(H) puede romper caminos(\U0001f343) :\n:       camino ten mucho cuidado!!                         :";
-const char* MSJ_INFORMATIVO3 = ":   \U0001f4dd  Los Totems(\U0001f369) te aumentarán las vidas...          :\n:       No existe limite de vidas!!                        :";
-const char* MSJ_INFORMATIVO4 = ":   \U0001f4dd  La Antorcha(L) ilumina el camino(\U0001f343) en un rango   :\n:       Manhattan 3!!                                      :";
-const char* MSJ_INFORMATIVO5 = ":   \U0001f4dd  Solo puedes ganar el nivel una ves puesto el       :\n:       pergamino en el altar                              :";
-const char* MSJ_INFORMATIVO6 = ":   \U0001f4dd  No intentes atravesar las casas...                 :\n:       al chocarte con una casa no perderas vidas         :";
 
 const char ARRIBA = 'W';
 const char ABAJO = 'S';
@@ -81,6 +67,19 @@ const char IZQUIERDA = 'A';
 
 const char ANTORCHA = 'L';
 const char HECHIZO_REVELADOR = 'H';
+
+const char* MSJ_DECORADOR = "------------------------------------------------------------";
+const char* MSJ_BIENVENIDA = "BIENVENIDO AL JUEGO DE ASCENCION DE MAGIOS";
+const char* MSJ_POSICION_RANURA = ":      Hola Homero (\U0001f9d4\u200D)... Ahora estas en la Runa(\u2721\uFE0F )      :\n:      obten el Pergamino(\U0001f4dc) y llevalo al Altar(\u26EA)!!     :";
+const char* MSJ_ALTAR_SIN_PERGAMINO   = ":   \u26A0\uFE0F   Prohibido el acceso del siguiente nivel..          :\n:       necesitas el Pergamino(\U0001f4dc)                         :";
+const char* MSJ_POSICION_FUERA_CAMINO = ": (\U0001f525)!!!HOMERO!!!! TE ESTAS QUEMANDO... vuelve al camino  :\n:         (perdiste una de tus vidas)                      :" ;
+
+const char* MSJ_INFORMATIVO1 = ":   \U0001f4dd  Las Piedras del Castigo(\U0001faa6) son molestas...!!      :\n:       activan la catapulta(\U0001f680) quitandote el pergamino   :";
+const char* MSJ_INFORMATIVO2 = ":   \U0001f4dd  Usar Hechizo Revelador(H) puede romper caminos(\U0001f343) :\n:       camino ten mucho cuidado!!                         :";
+const char* MSJ_INFORMATIVO3 = ":   \U0001f4dd  Los Totems(\U0001f369) te aumentarán las vidas...          :\n:       No existe limite de vidas!!                        :";
+const char* MSJ_INFORMATIVO4 = ":   \U0001f4dd  La Antorcha(L) ilumina el camino(\U0001f343) en un rango   :\n:       Manhattan 3!!                                      :";
+const char* MSJ_INFORMATIVO5 = ":   \U0001f4dd  Solo puedes ganar el nivel una ves puesto el       :\n:       pergamino en el altar                              :";
+const char* MSJ_INFORMATIVO6 = ":   \U0001f4dd  No intentes atravesar las casas...                 :\n:       al chocarte con una casa no perderas vidas         :";
 
 typedef struct emoji {
     char representacion[40];
@@ -99,11 +98,59 @@ int numero_aleatorio(int maximo_exclusivo){
 
 /*
 * Pre condiciones: 
+    -> El vector de 'objetos' debe estar inicializado.
+    -> El valor 'tope_objetos' debe ser > 0.
+    -> El valor de 'fil_movimiento' debe estar entre (0-19) y 'col_movimiento' debe estar entre (0-29).  
+* Post condiciones: 
+    -> Devuelve el valor del indice de la posicion en la que se encuentra el 'objeto'.
+*/
+int busca_indice_objeto(objeto_t objetos[MAX_ELEMENTOS], int tope_objetos, int fil_movimiento, int col_movimiento){
+    int posicion = 0;
+    bool posicion_encontrada = false;    
+    while(!posicion_encontrada && (posicion < tope_objetos)) {
+        if (objetos[posicion].posicion.fil == fil_movimiento && objetos[posicion].posicion.col == col_movimiento){
+            posicion_encontrada = true;
+        } else {
+            posicion++;
+        }
+    }
+    if (posicion_encontrada == false){
+        return -1; 
+    }
+    return posicion;
+}
+
+/*
+* Pre condiciones: 
+    -> El vector de 'posiciones' debe estar inicializado.
+    -> El valor de 'tope_posiciones' debe ser > 0.
+    -> fil_camino debe estar entre (0-19) y col_camino debe estar entre (0-29)  
+* Post condiciones: 
+    -> Devuelve el valor del indice de la posicion en la que se encuentra el camino.
+*/
+int busca_indice_posicion(coordenada_t posiciones[MAX_CAMINO], int tope_posiciones, int fil_camino, int col_camino){
+    int indice_posicion = 0;
+    bool posicion_encontrada = false;
+    while((!posicion_encontrada) && (indice_posicion < tope_posiciones)){
+        if ((posiciones[indice_posicion].fil == fil_camino) && (posiciones[indice_posicion].col == col_camino)){
+            posicion_encontrada = true;
+        } else {
+            indice_posicion++;
+        }
+    }
+    if (posicion_encontrada == false){
+        return -1;
+    }
+    return indice_posicion;
+}
+
+/*
+* Pre condiciones: 
     -> El vector de 'estructuras'(caminos y/o paredes) debe estar inicializado. 
     -> El valor de 'tope_estructura' debe ser > 0.
     -> El valor de 'fila_dada' debe estar entre 0-19 y 'columna_dada' entre 0-29.
 * Post condiciones: 
-    -> Devuelve -true- si la 'fila_dada', 'columna_dada' coincide con las coordenda (fila, columna) del algun camino y/o pared
+    -> Devuelve -true- si la 'fila_dada', 'columna_dada' coincide con las coordenda (fila, columna) del algun 'estructuras'(paredes o caminos).
     -> Devuelve -false- en caso contrario
 */
 bool es_posicion_estructura(coordenada_t estructuras[MAX_CAMINO], int tope_estructura, int fila_dada, int columna_dada){
@@ -120,11 +167,10 @@ bool es_posicion_estructura(coordenada_t estructuras[MAX_CAMINO], int tope_estru
 
 /*
 * Pre condiciones: 
-    -> EL objeto debe estar incializado. 
-    -> El valor de 'fila_dada' debe estar entre (0-19)
-    -> El valor de 'columna_dada' debe estar entre (0-29)
+    -> EL 'coordenada_elemento' debe estar incializado. 
+    -> Los valores de 'fila_dada' debe estar entre (0-19) y 'columna_dada' entre (0-29)
 * Pos condiciones: 
-    -> Devuelve -true- si la posicion de 'coordenda_elemento' coincide con la 'fila_dada' y 'columna_dada'.
+    -> Devuelve -true- si los valores de posicion(fila, columna) de 'coordenda_elemento' coincide con la 'fila_dada' y 'columna_dada'.
     -> Devuelve -false- en caso contrario.
 */
 bool es_posicion_elemento(coordenada_t coordenada_elemento, int fila_dada, int columna_dada){
@@ -143,7 +189,7 @@ bool es_posicion_elemento(coordenada_t coordenada_elemento, int fila_dada, int c
 bool es_posicion_objeto(objeto_t objetos[MAX_ELEMENTOS], int tope_objetos, int fila_dada, int columna_dada){
     bool en_objeto = false;
     int indice_objeto = 0;
-    while(!en_objeto && indice_objeto < tope_objetos && tope_objetos > 0){
+    while(!en_objeto && (indice_objeto < tope_objetos) && (tope_objetos > 0)){
         if(objetos[indice_objeto].posicion.fil == fila_dada && objetos[indice_objeto].posicion.col == columna_dada){
             en_objeto = true;
         }
@@ -155,18 +201,18 @@ bool es_posicion_objeto(objeto_t objetos[MAX_ELEMENTOS], int tope_objetos, int f
 /*
 * Pre condiciones: 
     -> 'nivel' debe estar inicializado.
-    -> El valor de 'tope_camino'.
-    -> Los valores de 'fila_totem' debe estar entre 0-19 y 'columna_totem' entre 0-29
+    -> El valor de 'tope_camino' debe ser > 0.
+    -> Los valores de 'fila_dada' debe estar entre 0-19 y 'columna_dada' entre 0-29.
 * Post condiciones: 
     -> Devuelve -true- si es: pergamino, camino inicial, camino final, paredes. 
     -> Devuelve -false- en caso contrario.
 */
-bool es_posicion_para_totem(nivel_t* nivel, int tope_camino, int fila_totem, int columna_totem){
+bool es_posicion_para_totem(nivel_t* nivel, int tope_camino, int fila_dada, int columna_dada){
     return (
-        es_posicion_elemento((*nivel).pergamino, fila_totem, columna_totem) || 
-        es_posicion_elemento((*nivel).camino[0], fila_totem, columna_totem) || 
-        es_posicion_elemento((*nivel).camino[tope_camino-1], fila_totem, columna_totem) || 
-        es_posicion_estructura((*nivel).paredes, (*nivel).tope_paredes, fila_totem, columna_totem)
+        es_posicion_elemento((*nivel).pergamino, fila_dada, columna_dada) || 
+        es_posicion_elemento((*nivel).camino[0], fila_dada, columna_dada) || 
+        es_posicion_elemento((*nivel).camino[tope_camino-1], fila_dada, columna_dada) || 
+        es_posicion_estructura((*nivel).paredes, (*nivel).tope_paredes, fila_dada, columna_dada)
     );
 }
 
@@ -201,6 +247,52 @@ bool es_posicion_para_catapulta(nivel_t* nivel, int fila_catapulta, int columna_
         es_posicion_elemento((*nivel).pergamino, fila_catapulta, columna_catapulta) || 
         es_posicion_objeto((*nivel).herramientas, (*nivel).tope_herramientas, fila_catapulta, columna_catapulta) ||
         es_posicion_objeto((*nivel).obstaculos, (*nivel).tope_obstaculos,fila_catapulta, columna_catapulta )
+    );
+}
+
+/*
+* Pre condiciones: -
+* Post condicones: 
+    -> Devuelve -true- si el movimiento es: S, D, A ó W.
+    -> Devuelve -false- en caso contrario.
+*/
+bool es_movimiento(char movimiento){
+    return (movimiento == DERECHA || movimiento == ABAJO || movimiento == IZQUIERDA || movimiento == ARRIBA );
+}
+
+/*
+* Pre condiciones: -
+* Post condiciones: 
+    -> Devuelve -true- si fil_movimiento esta entre 0-19 y col_movimiento esta entre 0-29.
+*/
+bool es_posicion_mapa(int fil_movimiento, int col_movimiento){
+    return (fil_movimiento >= MIN_FIL_POSICION && fil_movimiento < MAX_FIL_POSICION) && (col_movimiento >= MIN_COL_POSICION && col_movimiento < MAX_COL_POSICION);
+}
+
+/*
+* Pre condicones: -
+* Post condiciones: 
+    -> Devuelve -true- si valor del 'movimiento' es una herramienta (H ó L). 
+    -> Devuelve -false- en caso contrario. 
+*/
+bool es_herramienta(char movimiento){
+    return (movimiento == HECHIZO_REVELADOR || movimiento == ANTORCHA);
+}
+
+/*
+* Pre condiciones: 
+    -> -
+* Post condiciones: 
+    -> Devuelve -true- si el los valores de la posicion('fila' y 'columna') estan a una distancia manahttan 3 de la posicion del personaje('fil_personaje', 'col_personaje'). 
+    -> Devuelve -false- en caso contrario. 
+*/
+bool es_rango_distancia(coordenada_t posicion_personaje, int fila, int columna){
+    int fila_coordendada = posicion_personaje.fil - fila;
+    int columna_coordendada = posicion_personaje.col - columna;
+    return( (fila_coordendada+columna_coordendada) <= RANGO_MANHATTAN && 
+        (fila_coordendada-columna_coordendada) >= -RANGO_MANHATTAN && 
+        (fila_coordendada-columna_coordendada)<= RANGO_MANHATTAN && 
+        (fila_coordendada+columna_coordendada) >= -RANGO_MANHATTAN
     );
 }
 
@@ -430,83 +522,6 @@ void cambiar_nivel(juego_t* juego) {
 }
 
 /*
-* Pre condiciones: -
-* Post condicones: 
-    -> Devuelve -true- si el movimiento es: S, D, A ó W.
-    -> Devuelve -false- en caso contrario.
-*/
-bool es_movimiento(char movimiento){
-    return (movimiento == DERECHA || movimiento == ABAJO || movimiento == IZQUIERDA || movimiento == ARRIBA );
-}
-
-/*
-* Pre condiciones: -
-* Post condiciones: 
-    -> Devuelve -true- si fil_movimiento esta entre 0-19 y col_movimiento esta entre 0-29.
-*/
-bool es_posicion_mapa(int fil_movimiento, int col_movimiento){
-    return (fil_movimiento >= MIN_FIL_POSICION && fil_movimiento < MAX_FIL_POSICION) && (col_movimiento >= MIN_COL_POSICION && col_movimiento < MAX_COL_POSICION);
-}
-
-/*
-* Pre condicones: -
-* Post condiciones: 
-    -> Devuelve -true- si valor del 'movimiento' es una herramienta (H ó L). 
-    -> Devuelve -false- en caso contrario. 
-*/
-bool es_herramienta(char movimiento){
-    return (movimiento == HECHIZO_REVELADOR || movimiento == ANTORCHA);
-}
-
-/*
-* Pre condiciones: 
-    -> El vector de 'objetos' debe estar inicializado.
-    -> El valor 'tope_objetos' debe ser > 0.
-    -> El valor de 'fil_movimiento' debe estar entre (0-19) y 'col_movimiento' debe estar entre (0-29).  
-* Post condiciones: 
-    -> Devuelve el valor del indice de la posicion en la que se encuentra el 'objeto'.
-*/
-int busca_indice_objeto(objeto_t objetos[MAX_ELEMENTOS], int tope_objetos, int fil_movimiento, int col_movimiento){
-    int posicion = 0;
-    bool posicion_encontrada = false;    
-    while(!posicion_encontrada && (posicion < tope_objetos)) {
-        if (objetos[posicion].posicion.fil == fil_movimiento && objetos[posicion].posicion.col == col_movimiento){
-            posicion_encontrada = true;
-        } else {
-            posicion++;
-        }
-    }
-    if (posicion_encontrada == false){
-        return -1; 
-    }
-    return posicion;
-}
-
-/*
-* Pre condiciones: 
-    -> El vector de 'posiciones' debe estar inicializado.
-    -> El valor de 'tope_posiciones' debe ser > 0.
-    -> fil_camino debe estar entre (0-19) y col_camino debe estar entre (0-29)  
-* Post condiciones: 
-    -> Devuelve el valor del indice de la posicion en la que se encuentra el camino.
-*/
-int busca_indice_posicion(coordenada_t posiciones[MAX_CAMINO], int tope_posiciones, int fil_camino, int col_camino){
-    int indice_posicion = 0;
-    bool posicion_encontrada = false;
-    while((!posicion_encontrada) && (indice_posicion < tope_posiciones)){
-        if ((posiciones[indice_posicion].fil == fil_camino) && (posiciones[indice_posicion].col == col_camino)){
-            posicion_encontrada = true;
-        } else {
-            indice_posicion++;
-        }
-    }
-    if (posicion_encontrada == false){
-        return -1;
-    }
-    return indice_posicion;
-}
-
-/*
 * Pre condiciones: 
     -> 'juego' debe estar inicializado.
     -> El vector 'camino' debe estar inicializado.
@@ -613,7 +628,6 @@ void tirar_pergamino(bool* camino_visible, bool* antorcha_encendida, bool* recol
     (*recolecto_pergamino) = false;
 }
 
-
 /*
 * Pre condiciones: 
     -> El vector de 'caminos' debe estar inicializado.
@@ -657,7 +671,6 @@ void lanzar_bola_fuego( nivel_t* nivel, int* tope_caminos, coordenada_t posicion
         }
     }
 }
-
 
 /*
 * Pre condiciones: 
@@ -749,6 +762,7 @@ void accionar_elemento(juego_t* juego, nivel_t* nivel, int fila_personaje, int c
         activar_runa(&(*juego).camino_visible, &(*juego).homero.antorcha_encendida);
     }
 }
+
 /*
 * Pre condiciones: 
     -> 'juego' y 'nivel' deben estar inicializados.
@@ -765,8 +779,9 @@ void accionar_objeto(juego_t* juego, nivel_t* nivel, int fila_personaje, int col
             desactivar_herramientas(&(*juego).homero.antorcha_encendida, &(*juego).camino_visible);
         }
     } 
-    if (es_posicion_objeto((*nivel).obstaculos, (*nivel).tope_obstaculos-1, fila_personaje, columna_personaje)){
-        int indice_obstaculo = busca_indice_objeto((*nivel).obstaculos, (*nivel).tope_obstaculos, fila_personaje, columna_personaje);
+    if (es_posicion_objeto((*nivel).obstaculos, (((*nivel).tope_obstaculos)-1), fila_personaje, columna_personaje)){
+        int indice_obstaculo; 
+        indice_obstaculo = busca_indice_objeto((*nivel).obstaculos, ((*nivel).tope_obstaculos), fila_personaje, columna_personaje);
         if (indice_obstaculo != -1){
             posicionar_pergamino((*nivel), &(*nivel).pergamino, (*nivel).tope_camino );
             eliminar_objeto((*nivel).obstaculos, &(*nivel).tope_obstaculos, indice_obstaculo);
@@ -832,7 +847,6 @@ void realizar_jugada(juego_t* juego, char movimiento){
         }
     }
 }
-
 
 /*
 * Pre condiciones: 
@@ -923,7 +937,6 @@ void agregar_paredes(emoji_t mapa[MAX_FILAS][MAX_COLUMNAS], coordenada_t paredes
     }
 }
 
-
 /*
 * Pre condiciones: 
     -> 'mapa', 'caminos y 'paredes' deben estar inicializados.
@@ -958,31 +971,6 @@ void agregar_camino(emoji_t mapa[MAX_FILAS][MAX_COLUMNAS], coordenada_t camino[M
 
 /*
 * Pre condiciones: 
-* Post condiciones: 
-*/
-bool es_distancia_permitida(int fil_personaje, int col_personaje, int fila, int columna){
-    return ( ((fil_personaje-fila) <= RANGO_MANHATTAN) && ((col_personaje-columna)<= RANGO_MANHATTAN) && ((fil_personaje-fila) >= -RANGO_MANHATTAN) && ((col_personaje-columna)>=-RANGO_MANHATTAN) );
-}
-
-/*
-* Pre condiciones: 
-    -> -
-* Post condiciones: 
-    -> Devuelve -true- si el los valores de la posicion('fila' y 'columna') estan a una distancia manahttan 3 de la posicion del personaje('fil_personaje', 'col_personaje'). 
-    -> Devuelve -false- en caso contrario. 
-*/
-bool es_rango_distancia(int fil_personaje, int col_personaje, int fila, int columna){
-    int fila_coordendada = fil_personaje - fila;
-    int columna_coordendada = col_personaje - columna;
-    return( (fila_coordendada+columna_coordendada) <= RANGO_MANHATTAN && 
-        (fila_coordendada-columna_coordendada) >= -RANGO_MANHATTAN && 
-        (fila_coordendada-columna_coordendada)<= RANGO_MANHATTAN && 
-        (fila_coordendada+columna_coordendada) >= -RANGO_MANHATTAN
-    );
-}
-
-/*
-* Pre condiciones: 
     -> 'mapa', 'caminos', 'paredes' deben estar inicializados.
     -> Los valores de 'tope_camino' y 'tope_paredes' debe ser > 0.
     -> La posicion del personaje debe ser dentro de los limites de la matriz mapa.  
@@ -990,16 +978,13 @@ bool es_rango_distancia(int fil_personaje, int col_personaje, int fila, int colu
     -> Carga en 'mapa' los valores de 'caminos' y 'paredes' en un rango manhattan 3 segun la posicion del personaje.
 */
 void agregar_camino_manhattan(emoji_t mapa[MAX_FILAS][MAX_COLUMNAS], coordenada_t caminos[MAX_CAMINO], int tope_caminos, coordenada_t paredes[MAX_CAMINO], int tope_paredes, coordenada_t posicion){
-    int fil_homero = posicion.fil;
-    int col_homero = posicion.col;
     for (int i = 0; i < MAX_FILAS; i++){
         for (int j = 0; j < MAX_COLUMNAS; j++){
-            if (es_rango_distancia(fil_homero, col_homero, i, j)){
-                if (es_posicion_estructura(caminos, tope_caminos, i, j)){
-                    strcpy(mapa[i][j].representacion, EMOJI_CAMINO);
-                } else if (!es_posicion_estructura(paredes, tope_paredes, i, j)) {
-                    strcpy(mapa[i][j].representacion, EMOJI_FUEGO);
-                }
+            if (es_rango_distancia(posicion, i, j) && (es_posicion_estructura(caminos, tope_caminos, i, j))){
+                strcpy(mapa[i][j].representacion, EMOJI_CAMINO);
+            } else if (es_rango_distancia(posicion, i, j) && !es_posicion_estructura(paredes, tope_paredes, i, j)) {
+                //strcpy(mapa[i][j].representacion, EMOJI_FUEGO);
+                strcpy(mapa[i][j].representacion, EMOJI_FUEGO);
             }
         }
     }
