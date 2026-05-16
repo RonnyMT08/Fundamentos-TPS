@@ -3,6 +3,7 @@
 #include <time.h> 
 #include <stdio.h>
 
+#define MAX_LETRAS 400
 const int MINIMO_VIDAS = 0;
 const int JUEGO_JUGANDO = 0;
 const int NIVEL_ACTUAL_GANADO = 1;
@@ -42,25 +43,37 @@ const char* MSL_MOVIMIENTO_INVALIDO = "\u26A0\uFE0F  El movimiento es invalido. 
 
 /*
 Pre condiciones: -
-Post condiciones: devuelve true si el 'movimiento' es H, L, D, S, A ó W. False en caso contrario.
+Post condiciones: Devuelve -true- si el 'movimiento' es H(hechizo), L(antorcha), D(derecha), S(abajo), A(izquierda) ó W(arriba). -False- en caso contrario.
 */
-bool es_opcion(char movimiento){
+bool es_opcion_movimiento(char movimiento){
     return(movimiento == ACTIVAR_HECHIZO_REVELADOR || movimiento == ACTIVAR_ANTORCHA || movimiento == MOVERSE_DERECHA || movimiento == MOVERSE_ABAJO || movimiento == MOVERSE_IZQUIERDA || movimiento == MOVERSE_ARRIBA
     );
 }
 
 /*
 Pre condiciones: -
-Post condiciones: guarda en 'movimiento' el caracter ingresado por el usuario, movimiento debe ser  H, L, D, S, A, W. en caso de nos er ninguna de las anterioeres opciones vuelve a pedir otro caracter. 
+Post condiciones: 
+    -> Cargada en 'movimiento' la letra ingresada por el usuario
+    -> La letra ingresada debe ser  H, L, D, S, A, W. en caso de nos ser ninguna de las anteriores opciones se vuelverá a pedir otra letra. 
 */
 void pedir_movimiento(juego_t juego, char* movimiento){
     printf("%s \n", MSJ_EMOJI_DIRECCIONES);
     scanf(" %c", movimiento);
-    while (!es_opcion(*movimiento) ){
+    while (!es_opcion_movimiento(*movimiento) ){
         mostrar_juego(juego);
         printf("%s \n%s\n",MSJ_EMOJI_DIRECCIONES, MSL_MOVIMIENTO_INVALIDO); 
         scanf(" %c", movimiento);
     }
+}
+
+/*
+Pre condiciones: -
+Post condiciones: 
+    -> Imprime por pantalla el 'mensaje' dado por parametro.
+*/
+void mostrar_mesaje(const char mensaje[MAX_LETRAS]){
+    system("clear");
+    printf("%s", mensaje);
 }
 
 int main(){
@@ -84,11 +97,9 @@ int main(){
     }
 
     if (estado_juego(juego) == ESTADO_JUEGO_PERDIDO){
-        system("clear");
-        printf("%s", MSJ_ELIMINACION);
+        mostrar_mesaje(MSJ_ELIMINACION);
     } else if (estado_juego(juego) == ESTADO_JUEGO_GANADO && juego.homero.vidas_restantes >= MINIMO_VIDAS){
-        system("clear");
-        printf("%s", MSJ_JUEGO_GANADO);
+        mostrar_mesaje(MSJ_JUEGO_GANADO);
     }
     return 0;
 }
