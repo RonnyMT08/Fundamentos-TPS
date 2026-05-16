@@ -37,13 +37,13 @@ const int NIVELES_MAXIMO = 3;
 const int RANGO_MANHATTAN = 3;
 const int VALOR_DESPLAZAMIENTO = 1;
 
-const int MIN_VIDAS = 0;
 const int VIDAS_INICIALES = 5;
 const int ANTORCHAS_INICIALES = 5;
 const int HECHIZOS_REVELADORES_INICIALES = 5;
 const int TOTEMS_INICIALES = 5;
 const int PIEDRAS_CASTIGO_INCIALES = 10;
 
+const int MIN_VIDAS = 0;
 const int JUGANDO = 0;
 const int NIVEL_GANADO = 1;
 const int NIVEL_JUGANDO = 0;
@@ -205,16 +205,16 @@ bool es_posicion_objeto(objeto_t objetos[MAX_ELEMENTOS], int tope_objetos, int f
     -> El valor de 'tope_camino' debe ser > 0.
     -> Los valores de 'fila_dada' debe estar entre 0-19 y 'columna_dada' entre 0-29.
 * Post condiciones: 
-    -> Devuelve -true- si es: pergamino, camino inicial, camino final, paredes. 
+    -> Devuelve -true- si no es la posicion de un: pergamino, camino inicial, camino final, paredes. 
     -> Devuelve -false- en caso contrario.
 */
 bool es_posicion_para_totem(nivel_t nivel, int fila_dada, int columna_dada){
     int tope_camino = nivel.tope_camino;
     return (
-        es_posicion_elemento(nivel.pergamino, fila_dada, columna_dada) || 
-        es_posicion_elemento(nivel.camino[0], fila_dada, columna_dada) || 
-        es_posicion_elemento(nivel.camino[tope_camino-1], fila_dada, columna_dada) || 
-        es_posicion_estructura(nivel.paredes, nivel.tope_paredes, fila_dada, columna_dada)
+        !es_posicion_elemento(nivel.pergamino, fila_dada, columna_dada) && 
+        !es_posicion_elemento(nivel.camino[0], fila_dada, columna_dada) && 
+        !es_posicion_elemento(nivel.camino[tope_camino-1], fila_dada, columna_dada)&&
+        !es_posicion_estructura(nivel.paredes, nivel.tope_paredes, fila_dada, columna_dada)
     );
 }
 
@@ -223,13 +223,13 @@ bool es_posicion_para_totem(nivel_t nivel, int fila_dada, int columna_dada){
     -> 'nivel' debe estar inicializado.
     -> Los valores de 'fila_piedra' debe estar entre 0-19 y 'columna_piedra' entre 0-29.
 * Post condiciones:
-    -> Devuelve -true- si es: pergamino, camino inicial, camino final, paredes y herramientas.
+    -> Devuelve -true- si es no es una posicion de un: pergamino, camino inicial, camino final, paredes y herramientas.
     -> Devuelve -false- en caso contrario.
 */
 bool es_posicion_para_piedra(nivel_t nivel, int fila_piedra, int columna_piedra){
     return (
-        es_posicion_para_totem(nivel, fila_piedra, columna_piedra) || 
-        es_posicion_objeto(nivel.herramientas, nivel.tope_herramientas, fila_piedra, columna_piedra)
+        es_posicion_para_totem(nivel, fila_piedra, columna_piedra) && 
+        !es_posicion_objeto(nivel.herramientas, nivel.tope_herramientas, fila_piedra, columna_piedra)
     );
 }
 
@@ -238,28 +238,32 @@ bool es_posicion_para_piedra(nivel_t nivel, int fila_piedra, int columna_piedra)
     -> 'nivel' debe estar inicializado.
     -> Los valores de 'fila_totem' debe estar entre 0-19 y 'columna_totem' entre 0-29
 * Post condiciones: 
-    -> Devuelve -true- si es: camino, paredes, pergamino, camino inicial, herramientas, piedras del castigo.
+    -> Devuelve -true- si no es una posicion de un: camino, paredes, herramientas, piedras del castigo.
     -> Devuelve -false- en caso contrario.
 */
 bool es_posicion_para_catapulta(nivel_t nivel, int fila_catapulta, int columna_catapulta){
     return(
-        es_posicion_elemento(nivel.pergamino, fila_catapulta, columna_catapulta) || 
-        es_posicion_estructura(nivel.camino, nivel.tope_camino, fila_catapulta, columna_catapulta) || 
-        es_posicion_estructura(nivel.paredes, nivel.tope_paredes, fila_catapulta, columna_catapulta) || 
-        es_posicion_objeto(nivel.herramientas, nivel.tope_herramientas, fila_catapulta, columna_catapulta) ||
-        es_posicion_objeto(nivel.obstaculos, nivel.tope_obstaculos,fila_catapulta, columna_catapulta )
+        !es_posicion_estructura(nivel.camino, nivel.tope_camino, fila_catapulta, columna_catapulta) && 
+        !es_posicion_estructura(nivel.paredes, nivel.tope_paredes, fila_catapulta, columna_catapulta) && 
+        !es_posicion_objeto(nivel.herramientas, nivel.tope_herramientas, fila_catapulta, columna_catapulta) &&
+        !es_posicion_objeto(nivel.obstaculos, nivel.tope_obstaculos, fila_catapulta, columna_catapulta )
     );
 }
 
+/*
+* Pre condiciones: 
+    -> 'nivel' debe estar inicializado.
+    -> Los valores de 'fila_pergamino' debe estar entre 0-19 y 'columna_pergamino' entre 0-29
+* Post condiciones: 
+    -> Devuelve -true- si no es una posicion de un: (pergamino, camino inicial, camino final, paredes, herramientas, obstaculos) y es un camino
+    -> Devuelve -false- en caso contrario.
+*/
 bool es_posicion_para_pergamino(nivel_t nivel, int fila_pergamino, int columna_pergamino){
     int tope_camino = nivel.tope_camino; 
     return(
-        es_posicion_elemento(nivel.pergamino, fila_pergamino, columna_pergamino) ||
-        es_posicion_elemento(nivel.camino[0], fila_pergamino, columna_pergamino) || 
-        es_posicion_elemento(nivel.camino[tope_camino-1], fila_pergamino, columna_pergamino) || 
-        es_posicion_objeto(nivel.herramientas, nivel.tope_herramientas, fila_pergamino, columna_pergamino) || 
-        es_posicion_objeto(nivel.obstaculos, nivel.tope_obstaculos, fila_pergamino, columna_pergamino) || 
-        !(es_posicion_estructura(nivel.camino, tope_camino, fila_pergamino, columna_pergamino))
+        es_posicion_para_piedra(nivel, fila_pergamino, columna_pergamino) &&  
+        !es_posicion_objeto(nivel.obstaculos, nivel.tope_obstaculos, fila_pergamino, columna_pergamino) && 
+        (es_posicion_estructura(nivel.camino, tope_camino, fila_pergamino, columna_pergamino))
     );
 }
 
@@ -423,7 +427,7 @@ void inicializar_herramientas (nivel_t* nivel){
     for (int j = 0; j < TOTEMS_INICIALES; j++){
         int fil_totem = numero_aleatorio(MAX_FILAS);
         int col_totem = numero_aleatorio(MAX_COLUMNAS);
-        while (es_posicion_para_totem(*nivel , fil_totem, col_totem) || es_posicion_objeto((*nivel).herramientas, (*nivel).tope_herramientas, fil_totem, col_totem) ){
+        while (!es_posicion_para_totem(*nivel , fil_totem, col_totem) || es_posicion_objeto((*nivel).herramientas, (*nivel).tope_herramientas, fil_totem, col_totem) ){
             fil_totem = numero_aleatorio(MAX_FILAS);
             col_totem = numero_aleatorio(MAX_COLUMNAS);
         }
@@ -444,7 +448,7 @@ void inicializar_piedras_castigo(nivel_t* nivel){
     for (int j = 0; j < PIEDRAS_CASTIGO_INCIALES; j++){
         int fil_piedra = numero_aleatorio(MAX_FILAS);
         int col_piedra = numero_aleatorio(MAX_COLUMNAS);
-        while ( es_posicion_para_piedra(*nivel, fil_piedra, col_piedra) || es_posicion_objeto((*nivel).obstaculos, (*nivel).tope_obstaculos, fil_piedra, col_piedra)){
+        while (!es_posicion_para_piedra(*nivel, fil_piedra, col_piedra) || es_posicion_objeto((*nivel).obstaculos, (*nivel).tope_obstaculos, fil_piedra, col_piedra)){
             fil_piedra = numero_aleatorio(MAX_FILAS);
             col_piedra = numero_aleatorio(MAX_COLUMNAS);
         }
@@ -463,7 +467,7 @@ void inicializar_catapultas(nivel_t* nivel){
     int indice_catapulta = (*nivel).tope_obstaculos;
     int fil_catapulta = numero_aleatorio(MAX_FILAS);
     int col_catapulta = numero_aleatorio(MAX_COLUMNAS);
-    while (es_posicion_para_catapulta(*nivel, fil_catapulta, col_catapulta)){
+    while (!es_posicion_para_catapulta(*nivel, fil_catapulta, col_catapulta)){
         fil_catapulta = numero_aleatorio(MAX_FILAS);
         col_catapulta = numero_aleatorio(MAX_COLUMNAS);
     }
@@ -718,15 +722,14 @@ void recoger_herramienta(int* vidas_restantes, nivel_t* nivel, int indice_herram
 * Post condiciones: 
     -> Actualiza los valores de 'posicion del pergamino' en una posicion aleatoria, sobre el camino (sin superponerse a cualquier obstaculo u herramienta).
 */
-void posicionar_pergamino(nivel_t nivel, coordenada_t posicion_personaje, coordenada_t* posicion_pergamino){
+void posicionar_pergamino(nivel_t *nivel, coordenada_t posicion_personaje){
     int fil_pergamino = numero_aleatorio(MAX_FILAS);
     int col_pergamino = numero_aleatorio(MAX_COLUMNAS);
-    while (es_posicion_para_pergamino(nivel, fil_pergamino, col_pergamino) || es_posicion_elemento(posicion_personaje, fil_pergamino, col_pergamino)){
+    while (!es_posicion_para_pergamino((*nivel), fil_pergamino, col_pergamino) || es_posicion_elemento(posicion_personaje, fil_pergamino, col_pergamino)){
             fil_pergamino = numero_aleatorio(MAX_FILAS);
             col_pergamino = numero_aleatorio(MAX_COLUMNAS);    
     }
-    (*posicion_pergamino).fil = fil_pergamino;
-    (*posicion_pergamino).col = col_pergamino;
+    cargar_posicion(&(*nivel).pergamino, fil_pergamino, col_pergamino);
 }
 
 /*
@@ -785,7 +788,7 @@ void accionar_objeto(juego_t* juego, int fila_personaje, int columna_personaje){
         indice_obstaculo = busca_indice_objeto((*juego).niveles[indice_nivel].obstaculos, (*juego).niveles[indice_nivel].tope_obstaculos, fila_personaje, columna_personaje);
         if (indice_obstaculo != INDICE_INVALIDO){
             eliminar_objeto((*juego).niveles[indice_nivel].obstaculos, &(*juego).niveles[indice_nivel].tope_obstaculos, indice_obstaculo);
-            posicionar_pergamino((*juego).niveles[indice_nivel], (*juego).homero.posicion, &(*juego).niveles[indice_nivel].pergamino);
+            posicionar_pergamino(&(*juego).niveles[indice_nivel], (*juego).homero.posicion);
             tirar_pergamino(&(*juego).camino_visible, &(*juego).homero.antorcha_encendida, &(*juego).homero.recolecto_pergamino);
         }   
     } else if (es_posicion_objeto((*juego).niveles[indice_nivel].herramientas, (*juego).niveles[indice_nivel].tope_herramientas, fila_personaje, columna_personaje) ){
