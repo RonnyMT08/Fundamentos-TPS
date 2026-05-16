@@ -38,7 +38,7 @@ const int RANGO_MANHATTAN = 3;
 const int VALOR_DESPLAZAMIENTO = 1;
 
 const int MIN_VIDAS = 0;
-const int VIDAS_INICIALES = 50;
+const int VIDAS_INICIALES = 5;
 const int ANTORCHAS_INICIALES = 5;
 const int HECHIZOS_REVELADORES_INICIALES = 5;
 const int TOTEMS_INICIALES = 5;
@@ -781,11 +781,11 @@ void accionar_elemento(juego_t* juego, int fila_personaje, int columna_personaje
 void accionar_objeto(juego_t* juego, int fila_personaje, int columna_personaje){ 
     int indice_nivel = ((*juego).nivel_actual)-1;
     if (es_posicion_objeto((*juego).niveles[indice_nivel].obstaculos, (((*juego).niveles[indice_nivel].tope_obstaculos)-1), fila_personaje, columna_personaje)){
-        int indice_obstaculo; 
+        int indice_obstaculo = INDICE_INVALIDO; 
         indice_obstaculo = busca_indice_objeto((*juego).niveles[indice_nivel].obstaculos, (*juego).niveles[indice_nivel].tope_obstaculos, fila_personaje, columna_personaje);
         if (indice_obstaculo != INDICE_INVALIDO){
-            posicionar_pergamino((*juego).niveles[indice_nivel], (*juego).homero.posicion, &(*juego).niveles[indice_nivel].pergamino);
             eliminar_objeto((*juego).niveles[indice_nivel].obstaculos, &(*juego).niveles[indice_nivel].tope_obstaculos, indice_obstaculo);
+            posicionar_pergamino((*juego).niveles[indice_nivel], (*juego).homero.posicion, &(*juego).niveles[indice_nivel].pergamino);
             tirar_pergamino(&(*juego).camino_visible, &(*juego).homero.antorcha_encendida, &(*juego).homero.recolecto_pergamino);
         }   
     } else if (es_posicion_objeto((*juego).niveles[indice_nivel].herramientas, (*juego).niveles[indice_nivel].tope_herramientas, fila_personaje, columna_personaje) ){
