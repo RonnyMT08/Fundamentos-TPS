@@ -691,15 +691,15 @@ void eliminar_camino(coordenada_t caminos[MAX_CAMINO], int* tope_caminos, int po
 void lanzar_bola_fuego( nivel_t* nivel, int* tope_caminos, coordenada_t posicion_personaje){
     int fil_bola = numero_aleatorio(MAX_FILAS);
     int col_bola = numero_aleatorio(MAX_COLUMNAS);
-    while (es_posicion_para_bola_fuego(*nivel, fil_bola, col_bola) || es_posicion_elemento(posicion_personaje, fil_bola, col_bola)){
+    while (!es_posicion_para_bola_fuego(*nivel, fil_bola, col_bola) || es_posicion_elemento(posicion_personaje, fil_bola, col_bola)){
             fil_bola = numero_aleatorio(MAX_FILAS);
             col_bola = numero_aleatorio(MAX_COLUMNAS);
     }
     if (es_posicion_estructura((*nivel).camino, *tope_caminos, fil_bola, col_bola)){
         int indice_posicion_camino;
-        indice_posicion_camino = busca_indice_posicion((*nivel).camino, (*nivel).tope_camino, fil_bola, col_bola);
-        if (indice_posicion_camino != -1){
-            eliminar_camino((*nivel).camino, &(*tope_caminos), indice_posicion_camino);     
+        indice_posicion_camino = busca_indice_posicion((*nivel).camino, *tope_caminos, fil_bola, col_bola);
+        if (indice_posicion_camino != INDICE_INVALIDO){
+            eliminar_camino((*nivel).camino, tope_caminos, indice_posicion_camino);     
         }
     }
 }
