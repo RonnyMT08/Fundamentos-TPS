@@ -733,7 +733,6 @@ void posicionar_pergamino(nivel_t *nivel, coordenada_t posicion_personaje){
             col_pergamino = numero_aleatorio(MAX_COLUMNAS);    
     }
     cargar_posicion(&(*nivel).pergamino, fil_pergamino, col_pergamino);
-    printf("posiciono pergamino");
 }
 
 /*
@@ -789,7 +788,7 @@ void accionar_objeto(juego_t* juego, int fila_personaje, int columna_personaje){
     int indice_nivel = ((*juego).nivel_actual)-1;
     if (es_posicion_objeto((*juego).niveles[indice_nivel].obstaculos, ((*juego).niveles[indice_nivel].tope_obstaculos), fila_personaje, columna_personaje)){
         int indice_obstaculo = INDICE_INVALIDO; 
-        indice_obstaculo = busca_indice_objeto((*juego).niveles[indice_nivel].obstaculos, ((*juego).niveles[indice_nivel].tope_obstaculos)-1, fila_personaje, columna_personaje);
+        indice_obstaculo = busca_indice_objeto((*juego).niveles[indice_nivel].obstaculos, ((*juego).niveles[indice_nivel].tope_obstaculos), fila_personaje, columna_personaje);
         if (indice_obstaculo != INDICE_INVALIDO){
             eliminar_objeto((*juego).niveles[indice_nivel].obstaculos, &(*juego).niveles[indice_nivel].tope_obstaculos, indice_obstaculo);
             posicionar_pergamino(&(*juego).niveles[indice_nivel], (*juego).homero.posicion);
