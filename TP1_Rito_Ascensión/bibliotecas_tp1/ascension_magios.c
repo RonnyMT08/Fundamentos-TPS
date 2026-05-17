@@ -44,6 +44,9 @@ const int TOTEMS_INICIALES = 5;
 const int PIEDRAS_CASTIGO_INCIALES = 10;
 
 const int MIN_VIDAS = 0;
+const int MIN_ANTORCHAS = 0;
+const int MIN_HECHIZOS = 0;
+
 const int JUGANDO = 0;
 const int NIVEL_GANADO = 1;
 const int NIVEL_JUGANDO = 0;
@@ -90,7 +93,8 @@ typedef struct emoji {
 * Pre condiciones:
     -> 'maximo_exclusivo' debe ser > 0.
 * Post condiciones: 
-    -> Devuele un valor aleatorio dentro del rango de 0 y el ('maximo_exclusivo' - 1).
+    -> Devuelve un valor aleatorio dentro del rango de 0 y el ('maximo_exclusivo' - 1).
+    -> ej. 'maximo_exclusivo' = 5 --> (0,1,2,3,4).
 */
 int numero_aleatorio(int maximo_exclusivo){
     int numero = rand() % maximo_exclusivo;
@@ -104,6 +108,7 @@ int numero_aleatorio(int maximo_exclusivo){
     -> El valor de 'fil_movimiento' debe estar entre (0-19) y 'col_movimiento' debe estar entre (0-29).  
 * Post condiciones: 
     -> Devuelve el valor del indice de la posicion en la que se encuentra el 'objeto'.
+    -> en caso de no encortrar el indice devuelve -1.
 */
 int busca_indice_objeto(objeto_t objetos[MAX_ELEMENTOS], int tope_objetos, int fil_movimiento, int col_movimiento){
     int posicion = 0;
@@ -116,7 +121,7 @@ int busca_indice_objeto(objeto_t objetos[MAX_ELEMENTOS], int tope_objetos, int f
         }
     }
     if (posicion_encontrada == false){
-        return -1; 
+        return INDICE_INVALIDO; 
     }
     return posicion;
 }
@@ -128,6 +133,7 @@ int busca_indice_objeto(objeto_t objetos[MAX_ELEMENTOS], int tope_objetos, int f
     -> fil_camino debe estar entre (0-19) y col_camino debe estar entre (0-29)  
 * Post condiciones: 
     -> Devuelve el valor del indice de la posicion en la que se encuentra el camino.
+    -> en caso de no encortrar el indice devuelve -1.
 */
 int busca_indice_posicion(coordenada_t posiciones[MAX_CAMINO], int tope_posiciones, int fil_camino, int col_camino){
     int indice_posicion = 0;
@@ -140,7 +146,7 @@ int busca_indice_posicion(coordenada_t posiciones[MAX_CAMINO], int tope_posicion
         }
     }
     if (posicion_encontrada == false){
-        return -1;
+        return INDICE_INVALIDO;
     }
     return indice_posicion;
 }
@@ -270,7 +276,7 @@ bool es_posicion_para_pergamino(nivel_t nivel, int fila_pergamino, int columna_p
 /*
 * Pre condiciones: -
 * Post condicones: 
-    -> Devuelve -true- si el movimiento es: S, D, A ó W.
+    -> Devuelve -true- si el movimiento es: ABAJO(S), DERECHA(D), IZQUIERDA(A) ó ARRIBA(W).
     -> Devuelve -false- en caso contrario.
 */
 bool es_movimiento(char movimiento){
@@ -289,7 +295,7 @@ bool es_posicion_mapa(int fil_movimiento, int col_movimiento){
 /*
 * Pre condicones: -
 * Post condiciones: 
-    -> Devuelve -true- si valor del 'movimiento' es una herramienta (H ó L). 
+    -> Devuelve -true- si valor del 'movimiento' es una herramienta HECHIZO(H) ó ANTORCHA(L). 
     -> Devuelve -false- en caso contrario. 
 */
 bool es_herramienta(char movimiento){
@@ -297,15 +303,14 @@ bool es_herramienta(char movimiento){
 }
 
 /*
-* Pre condiciones: 
-    -> -
+* Pre condiciones: -
 * Post condiciones: 
-    -> Devuelve -true- si el los valores de la posicion('fila' y 'columna') estan a una distancia manahttan 3 de la posicion del personaje('fil_personaje', 'col_personaje'). 
+    -> Devuelve -true- si los valores de la posicion('fila_dada' y 'columna_dada') estan a una distancia manahttan 3(RANGO_MANHATTAN) de la posicion del personaje('fil', 'col'). 
     -> Devuelve -false- en caso contrario. 
 */
-bool es_rango_distancia(coordenada_t posicion_personaje, int fila, int columna){
-    int fila_coordendada = posicion_personaje.fil - fila;
-    int columna_coordendada = posicion_personaje.col - columna;
+bool es_rango_distancia(coordenada_t posicion_personaje, int fila_dada, int columna_dada){
+    int fila_coordendada = posicion_personaje.fil - fila_dada;
+    int columna_coordendada = posicion_personaje.col - columna_dada;
     return( (fila_coordendada+columna_coordendada) <= RANGO_MANHATTAN && 
         (fila_coordendada-columna_coordendada) >= -RANGO_MANHATTAN && 
         (fila_coordendada-columna_coordendada)<= RANGO_MANHATTAN && 
@@ -316,7 +321,7 @@ bool es_rango_distancia(coordenada_t posicion_personaje, int fila, int columna){
 /*
 * Pre condiciones: -
 * Post condiciones: 
-    -> Carga el valor de la cantidad de niveles que tendra el juego.
+    -> Carga en 'juego' el valor de la cantidad de niveles(tope_niveles, nivel_actual) que tendra el juego.
 */
 void inicializar_cantidad_niveles(juego_t* juego){
     (*juego).nivel_actual = NIVEL_INICIO;
@@ -328,7 +333,7 @@ void inicializar_cantidad_niveles(juego_t* juego){
 * Pre condiciones: 
     -> EL valor de 'tope_niveles' debe ser > 0.
 * Post condiciones: 
-    -> Carga los valores de las estructuras (caminos y paredes) en el vector 'niveles' por cada nivel.   
+    -> Carga en 'niveles' los valores de las estructuras (caminos y paredes) por cada nivel.   
 */
 void inicializar_estructura(nivel_t niveles[MAX_NIVELES], int tope_niveles){
     int tope_paredes = 0;
@@ -366,7 +371,7 @@ void cargar_cant_herramientas(int* vidas_restantes, int* hechizos_reveladores, i
 /*
 * Pre condiciones: -
 * Post condiciones:
-    -> Carga el estado (antorcha, pergamino) con la que el persinaje inicia.
+    -> Carga el estado (antorcha, pergamino) con la que el personaje inicia.
 */
 void cargar_estado(bool* antorcha_encendida, bool* recolecto_pergamino){
     (*antorcha_encendida) = false;
@@ -377,7 +382,7 @@ void cargar_estado(bool* antorcha_encendida, bool* recolecto_pergamino){
 * Pre condiciones: 
     -> Los valores de 'posicion_inicial' deben estar inicializado.
 * Post condiciones: 
-    -> Inicializa los valore del personaje(posicion, herramientas, estado).
+    -> Carga en 'óersonaje' los valors de posicion, herramientas y estado inciales del personaje.
 */
 void inicializar_personaje (personaje_t *personaje, coordenada_t posicion_inicial){    
     cargar_posicion(&(*personaje).posicion, posicion_inicial.fil, posicion_inicial.col);
@@ -390,7 +395,7 @@ void inicializar_personaje (personaje_t *personaje, coordenada_t posicion_inicia
     -> El vector de 'caminos' debe estar inicializado.
     -> El valor de 'tope_caminos' debe ser > 0.
 * Post condiciones:
-    -> Carga en 'posicion_pergamino' el valor de la posicion aleatoria del pergamino(sin incluir la runa y el altar).
+    -> Carga en 'posicion_pergamino' el valor de una posicion aleatoria(sin incluir el altar y runa) del pergamino.
 */
 void inicializar_pergaminos(coordenada_t caminos[MAX_CAMINO], int tope_caminos, coordenada_t* posicion_pergamino){
     int fil_pergamino = numero_aleatorio(MAX_FILAS);
@@ -404,10 +409,10 @@ void inicializar_pergaminos(coordenada_t caminos[MAX_CAMINO], int tope_caminos, 
 
 /*
 * Pre condiciones:
-    -> El valor de 'tipo_dado' debera ser TOTEM, PIEDRA_CASTIGO ó CATAPULTA.
+    -> El valor de 'tipo_dado' debera ser (T)TOTEM, (R)PIEDRA_CASTIGO ó (F)CATAPULTA.
     -> Los valores de 'fila_dada' deben estar entre 0-19 y 'columna_dada entre 0-29. 
 * Post condicione:
-    -> Carga en 'objeto' los valores 'tipo_dado', 'fila_dada', 'columna_dada'.
+    -> Carga en 'objeto' los valores 'tipo_dado', 'fila_dada', 'columna_dada' del objeto.
 */
 void cargar_objeto(objeto_t* objeto, int* tope_objeto, char tipo_dado, int fila_dada, int columna_dada){
     (*objeto).tipo = tipo_dado;
@@ -420,7 +425,7 @@ void cargar_objeto(objeto_t* objeto, int* tope_objeto, char tipo_dado, int fila_
 * Pre condicones: 
     -> Los 'nivel' deben estar inicializados. 
 * Post condicioes: 
-    -> Inicializa los 5 totems repatidos aleatoriamente en todo el mapa, excluyendo caminos(inicio, final y la posicion del pergamino), paredes.  
+    -> Carga en 'nivel' los 5(TOTEMS_INICIALES) totems repatidos aleatoriamente(excluyendo pergamino,runa, altar, herramientas y paredes) en todo el mapa.  
 */
 void inicializar_herramientas (nivel_t* nivel){
     (*nivel).tope_herramientas = 0;
@@ -440,8 +445,7 @@ void inicializar_herramientas (nivel_t* nivel){
     -> El nivel debe estar inicializado.
     -> El valor de 'tope_camino' debera ser = 0. 
 * Post condiciones: 
-    -> Inicializa una 10 piedras en posicion aleatoria(perteneciente al camino).
-    -> No superponer a otro objeto por cada uno de los tres niveles, carga el tope de los obstaculos por nivel.
+    -> Carga en 'nivel' las 10 piedras del castigo en posiciones aleatorias(excluyendo pergamino, runa, altar, herramientas, paredes) pertenecientes al camino.
 */
 void inicializar_piedras_castigo(nivel_t* nivel){
     (*nivel).tope_obstaculos = 0;
@@ -460,8 +464,8 @@ void inicializar_piedras_castigo(nivel_t* nivel){
 * Pre condiciones: 
     -> El nivel debe estar inicializado.
 * Post condiciones: 
-    -> Inicializa la posicion de una catapulta. 
-    -> La posicion no pertenece a una posicion del camino y distinto de la posicion de una pared. 
+    -> Carga en 'nivel' la posicion aletarioa(excluyendo caminos, paredes, herramientas, piedras del castigo) una catapulta. 
+    -> La posicion no pertenece a una posicion del camino y distinto es de la posicion de una pared. 
 */
 void inicializar_catapultas(nivel_t* nivel){
     int indice_catapulta = (*nivel).tope_obstaculos;
@@ -478,7 +482,7 @@ void inicializar_catapultas(nivel_t* nivel){
 * Pre condiciones: 
     -> El 'nivel' debe estar inicializado.
 * Post condciones: 
-    -> Inicializa los obstaculos (piedras y catapultas) en 'nivel'.
+    -> Inicializa los obstaculos(piedras y catapultas) en 'nivel'.
 */
 void inicializar_obstaculos(nivel_t* nivel){
     inicializar_piedras_castigo(&(*nivel));
@@ -512,10 +516,9 @@ void inicializar_juego(juego_t* juego) {
 }
 
 /*
-* Pre condiciones: 
-    -> -
+* Pre condiciones: -
 * Post condciones: 
-    -> Carga el los valores de estado del personaje inicial despues de cada nivel superior al 1. 
+    -> Carga el los valores de estado del personaje inicial despues de cada nivel superior al 1(NIVEL_INICIAL). 
 */
 void cargar_estado_nivel( bool* antorcha_encendida, bool* recolecto_pergamino, bool* camino_visible, int* antorchas_iniciales){
     cargar_estado(&(*antorcha_encendida), &(*recolecto_pergamino));
@@ -730,6 +733,7 @@ void posicionar_pergamino(nivel_t *nivel, coordenada_t posicion_personaje){
             col_pergamino = numero_aleatorio(MAX_COLUMNAS);    
     }
     cargar_posicion(&(*nivel).pergamino, fil_pergamino, col_pergamino);
+    printf("posiciono pergamino");
 }
 
 /*
@@ -783,14 +787,14 @@ void accionar_elemento(juego_t* juego, int fila_personaje, int columna_personaje
 */
 void accionar_objeto(juego_t* juego, int fila_personaje, int columna_personaje){ 
     int indice_nivel = ((*juego).nivel_actual)-1;
-    if (es_posicion_objeto((*juego).niveles[indice_nivel].obstaculos, (((*juego).niveles[indice_nivel].tope_obstaculos)-1), fila_personaje, columna_personaje)){
+    if (es_posicion_objeto((*juego).niveles[indice_nivel].obstaculos, ((*juego).niveles[indice_nivel].tope_obstaculos), fila_personaje, columna_personaje)){
         int indice_obstaculo = INDICE_INVALIDO; 
-        indice_obstaculo = busca_indice_objeto((*juego).niveles[indice_nivel].obstaculos, (*juego).niveles[indice_nivel].tope_obstaculos, fila_personaje, columna_personaje);
+        indice_obstaculo = busca_indice_objeto((*juego).niveles[indice_nivel].obstaculos, ((*juego).niveles[indice_nivel].tope_obstaculos)-1, fila_personaje, columna_personaje);
         if (indice_obstaculo != INDICE_INVALIDO){
             eliminar_objeto((*juego).niveles[indice_nivel].obstaculos, &(*juego).niveles[indice_nivel].tope_obstaculos, indice_obstaculo);
             posicionar_pergamino(&(*juego).niveles[indice_nivel], (*juego).homero.posicion);
             tirar_pergamino(&(*juego).camino_visible, &(*juego).homero.antorcha_encendida, &(*juego).homero.recolecto_pergamino);
-        }   
+        }
     } else if (es_posicion_objeto((*juego).niveles[indice_nivel].herramientas, (*juego).niveles[indice_nivel].tope_herramientas, fila_personaje, columna_personaje) ){
         int indice_herramienta = busca_indice_objeto((*juego).niveles[indice_nivel].herramientas, (*juego).niveles[indice_nivel].tope_herramientas, fila_personaje, columna_personaje);
         if (indice_herramienta != INDICE_INVALIDO){
@@ -812,8 +816,8 @@ void realizar_evento(juego_t* juego){
     int indice_nivel = ((*juego).nivel_actual) -1;
     if (!es_posicion_estructura((*juego).niveles[indice_nivel].camino, (*juego).niveles[indice_nivel].tope_camino, fila_personaje, columna_personaje)) {
         salir_camino(&(*juego).homero.vidas_restantes, &(*juego).homero.antorcha_encendida, &(*juego).camino_visible);
-    } 
-    if (es_posicion_objeto((*juego).niveles[indice_nivel].obstaculos, (((*juego).niveles[indice_nivel].tope_obstaculos)-1), fila_personaje, columna_personaje) ||es_posicion_objeto((*juego).niveles[indice_nivel].herramientas, (*juego).niveles[indice_nivel].tope_herramientas, fila_personaje, columna_personaje)){
+    }     
+    if (es_posicion_objeto((*juego).niveles[indice_nivel].obstaculos, ((*juego).niveles[indice_nivel].tope_obstaculos), fila_personaje, columna_personaje) ||es_posicion_objeto((*juego).niveles[indice_nivel].herramientas, (*juego).niveles[indice_nivel].tope_herramientas, fila_personaje, columna_personaje)){
         accionar_objeto(&(*juego), fila_personaje, columna_personaje);
     } else if (es_posicion_elemento((*juego).niveles[indice_nivel].pergamino, fila_personaje, columna_personaje) || es_posicion_elemento((*juego).niveles[indice_nivel].camino[0], fila_personaje, columna_personaje)){
         accionar_elemento(&(*juego), fila_personaje, columna_personaje);
@@ -849,14 +853,14 @@ void realizar_jugada(juego_t* juego, char movimiento){
         valorar_movimiento(movimiento, &fil_movimiento, &col_movimiento);
         dirigir_movimiento(&(*juego), fil_movimiento, col_movimiento);
     } else if (es_herramienta(movimiento)){
-        if ((movimiento == HECHIZO_REVELADOR) && ((*juego).homero.hechizos_reveladores > 0) && !(*juego).camino_visible && !(*juego).homero.antorcha_encendida && !(es_posicion_elemento((*juego).homero.posicion, (*juego).niveles[indice_nivel].camino[0].fil, (*juego).niveles[indice_nivel].camino[0].col) )){
+        if ((movimiento == HECHIZO_REVELADOR) && ((*juego).homero.hechizos_reveladores > MIN_HECHIZOS) && !(*juego).camino_visible && !(*juego).homero.antorcha_encendida && !(es_posicion_elemento((*juego).homero.posicion, (*juego).niveles[indice_nivel].camino[0].fil, (*juego).niveles[indice_nivel].camino[0].col) )){
             lanzar_bola_fuego(&(*juego).niveles[indice_nivel], &(*juego).niveles[indice_nivel].tope_camino, (*juego).homero.posicion);
             (*juego).homero.hechizos_reveladores --;
             (*juego).homero.antorcha_encendida = false;
             (*juego).camino_visible = true;
-        } else if ((movimiento == ANTORCHA) && ((*juego).homero.antorchas > 0) && !(*juego).homero.antorcha_encendida && !(*juego).camino_visible && !(es_posicion_elemento((*juego).homero.posicion, (*juego).niveles[indice_nivel].camino[0].fil, (*juego).niveles[indice_nivel].camino[0].col))){
+        } else if ((movimiento == ANTORCHA) && ((*juego).homero.antorchas > MIN_ANTORCHAS) && !(*juego).homero.antorcha_encendida && !(*juego).camino_visible && !(es_posicion_elemento((*juego).homero.posicion, (*juego).niveles[indice_nivel].camino[0].fil, (*juego).niveles[indice_nivel].camino[0].col))){
             (*juego).homero.antorcha_encendida = true;
-            (*juego).homero.antorchas -= 1;
+            (*juego).homero.antorchas --;
         }
     }
 }
