@@ -243,7 +243,7 @@ bool es_posicion_para_piedra(nivel_t nivel, int fila_piedra, int columna_piedra)
 /*
 * Pre condiciones: 
     -> 'nivel' debe estar inicializado.
-    -> Los valores de 'fila_totem' debe estar entre 0-19 y 'columna_totem' entre 0-29
+    -> Los valores de 'fila_catapulta' debe estar entre 0-19 y 'columna_catapulta' entre 0-29
 * Post condiciones: 
     -> Devuelve -true- si es una posicion de un fuera del camino y no tenga ningun elemento(camino, paredes, herramientas, piedras del castigo)
     -> Devuelve -false- en caso contrario.
@@ -254,6 +254,23 @@ bool es_posicion_para_catapulta(nivel_t nivel, int fila_catapulta, int columna_c
         !es_posicion_estructura(nivel.paredes, nivel.tope_paredes, fila_catapulta, columna_catapulta) && 
         !es_posicion_objeto(nivel.herramientas, nivel.tope_herramientas, fila_catapulta, columna_catapulta) &&
         !es_posicion_objeto(nivel.obstaculos, nivel.tope_obstaculos, fila_catapulta, columna_catapulta )
+    );
+}
+
+/*
+* Pre condiciones: 
+    -> 'nivel' debe estar inicializado.
+    -> Los valores de 'fila_bola' debe estar entre 0-19 y 'columna_bola' entre 0-29
+* Post condiciones: 
+    -> Devuelve -true- si es una posicion de un fuera o dentro del camino y no tenga ningun elemento(paredes, runa, altar)
+    -> Devuelve -false- en caso contrario.
+*/
+bool es_posicion_para_bola_fuego(nivel_t nivel, int fila_bola, int columna_bola){
+    int tope_caminos = nivel.tope_camino;
+    return(
+        !es_posicion_estructura(nivel.paredes, nivel.tope_paredes, fila_bola, columna_bola) && 
+        !es_posicion_elemento(nivel.camino[0], fila_bola, columna_bola) &&
+        !es_posicion_elemento(nivel.camino[tope_caminos-1], fila_bola, columna_bola)
     );
 }
 
@@ -674,11 +691,7 @@ void eliminar_camino(coordenada_t caminos[MAX_CAMINO], int* tope_caminos, int po
 void lanzar_bola_fuego( nivel_t* nivel, int* tope_caminos, coordenada_t posicion_personaje){
     int fil_bola = numero_aleatorio(MAX_FILAS);
     int col_bola = numero_aleatorio(MAX_COLUMNAS);
-    while (
-        es_posicion_estructura((*nivel).paredes, (*nivel).tope_paredes, fil_bola, col_bola) || 
-        es_posicion_elemento( (*nivel).camino[0], fil_bola, col_bola)  || 
-        es_posicion_elemento( (*nivel).camino[(*tope_caminos)-1], fil_bola, col_bola) || 
-        es_posicion_elemento(posicion_personaje, fil_bola, col_bola) ){
+    while (es_posicion_para_bola_fuego(*nivel, fil_bola, col_bola) || es_posicion_elemento(posicion_personaje, fil_bola, col_bola)){
             fil_bola = numero_aleatorio(MAX_FILAS);
             col_bola = numero_aleatorio(MAX_COLUMNAS);
     }
@@ -844,6 +857,29 @@ void dirigir_movimiento(juego_t* juego, int fil_movimiento, int col_movimiento){
     }
 }
 
+/*
+* Pre condiciones: 
+    -> 'juego' deben estar inicializado.
+* Post condciciones: 
+    -> Actualiza en 'juego' los valores del hechizos_reveladores, antorcha_encedida y camino_visible despues de utilizar un hechizo revelador(H).
+*/
+void accionar_evento_hechizo(juego_t *juego){
+    (*juego).homero.hechizos_reveladores --;
+    (*juego).homero.antorcha_encendida = false;
+    (*juego).camino_visible = true;
+}
+
+/*
+* Pre condiciones: 
+    -> 'juego' deben estar inicializado.
+* Post condciciones: 
+    -> Actualiza en 'juego' los valores de antorcha_encedida y  antorchas despues de utilizar un hechizo revelador(L).
+*/
+void accionar_evento_antorcha(juego_t *juego){
+    (*juego).homero.antorcha_encendida = true;
+    (*juego).homero.antorchas --;
+}
+
 void realizar_jugada(juego_t* juego, char movimiento){
     int fil_movimiento = 0;
     int col_movimiento = 0;
@@ -854,12 +890,10 @@ void realizar_jugada(juego_t* juego, char movimiento){
     } else if (es_herramienta(movimiento)){
         if ((movimiento == HECHIZO_REVELADOR) && ((*juego).homero.hechizos_reveladores > MIN_HECHIZOS) && !(*juego).camino_visible && !(*juego).homero.antorcha_encendida && !(es_posicion_elemento((*juego).homero.posicion, (*juego).niveles[indice_nivel].camino[0].fil, (*juego).niveles[indice_nivel].camino[0].col) )){
             lanzar_bola_fuego(&(*juego).niveles[indice_nivel], &(*juego).niveles[indice_nivel].tope_camino, (*juego).homero.posicion);
-            (*juego).homero.hechizos_reveladores --;
-            (*juego).homero.antorcha_encendida = false;
-            (*juego).camino_visible = true;
+            accionar_evento_hechizo(&(*juego));
+            
         } else if ((movimiento == ANTORCHA) && ((*juego).homero.antorchas > MIN_ANTORCHAS) && !(*juego).homero.antorcha_encendida && !(*juego).camino_visible && !(es_posicion_elemento((*juego).homero.posicion, (*juego).niveles[indice_nivel].camino[0].fil, (*juego).niveles[indice_nivel].camino[0].col))){
-            (*juego).homero.antorcha_encendida = true;
-            (*juego).homero.antorchas --;
+            accionar_evento_antorcha(&(*juego));
         }
     }
 }
@@ -999,7 +1033,6 @@ void agregar_camino_manhattan(emoji_t mapa[MAX_FILAS][MAX_COLUMNAS], coordenada_
             if (es_rango_distancia(posicion, i, j) && (es_posicion_estructura(caminos, tope_caminos, i, j))){
                 strcpy(mapa[i][j].representacion, EMOJI_CAMINO);
             } else if (es_rango_distancia(posicion, i, j) && !es_posicion_estructura(paredes, tope_paredes, i, j)) {
-                //strcpy(mapa[i][j].representacion, EMOJI_FUEGO);
                 strcpy(mapa[i][j].representacion, EMOJI_FUEGO);
             }
         }
@@ -1073,13 +1106,25 @@ void agregar_herramientas(emoji_t mapa[MAX_FILAS][MAX_COLUMNAS], objeto_t herram
         strcpy(mapa[totem_fil][totem_col].representacion, EMOJI_TOTEM);
     }
 }
+/*
+* Pre condiciones: 
+    -> 'mapa', 'personaje' y 'nivel' debe estar incializado.
+* Post condiciones: 
+    -> Carga en ('mapa') del juego de al nivel('nivel_actual') los emojis de elementos de 'personaje', 'items', 'obstaculos' y 'herramientas'. 
+*/
+void agregar_elementos(emoji_t mapa[MAX_FILAS][MAX_COLUMNAS], nivel_t nivel, personaje_t personaje){
+    agregar_personaje(mapa, personaje.posicion);
+    agregar_items(mapa, nivel.camino, nivel.tope_camino, nivel.pergamino, personaje.recolecto_pergamino);
+    agregar_obstaculos(mapa, nivel.obstaculos, nivel.tope_obstaculos);
+    agregar_herramientas (mapa, nivel.herramientas, nivel.tope_herramientas);
+}
 
 /*
 * Pre condiciones: 
-    -> 'niveles', 'personaje' debe estar incializado.
+    -> 'nivel', 'personaje' debe estar incializado.
     -> El valor de 'indice_nivel' debe ser >= 0.
 * Post condiciones: 
-    -> Crea el mapa('mapa') del juego de acuerdo al nivel('indice_nivel') completo correspondiente.
+    -> Crea el mapa('mapa') del juego de acuerdo al nivel('nivel actual') completo correspondiente.
 */
 void crear_mapa(emoji_t mapa[MAX_FILAS][MAX_COLUMNAS], nivel_t nivel, personaje_t personaje, bool camino_visible){
     inicializar_mapa(mapa);
@@ -1090,10 +1135,7 @@ void crear_mapa(emoji_t mapa[MAX_FILAS][MAX_COLUMNAS], nivel_t nivel, personaje_
     } else if (personaje.antorcha_encendida){
         agregar_camino_manhattan(mapa, nivel.camino, nivel.tope_camino, nivel.paredes, nivel.tope_paredes, personaje.posicion);
     }
-    agregar_personaje(mapa, personaje.posicion);
-    agregar_items(mapa, nivel.camino, nivel.tope_camino, nivel.pergamino, personaje.recolecto_pergamino);
-    agregar_obstaculos(mapa, nivel.obstaculos, nivel.tope_obstaculos);
-    agregar_herramientas (mapa, nivel.herramientas, nivel.tope_herramientas);
+    agregar_elementos(mapa, nivel, personaje);
 }
 
 int estado_nivel(nivel_t nivel, personaje_t homero){
