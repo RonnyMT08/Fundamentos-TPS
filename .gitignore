@@ -53,3 +53,8 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# archivos no tps
+1_2026
+.vscode
+*.zip
