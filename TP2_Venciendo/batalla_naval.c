@@ -17,7 +17,7 @@
 #define FORMATO_LECTURA_SOBRES  "%i;%c\n"
 #define FORMATO_ESCRITURA_FIGUS "%i;%s;%s\n"
 
-const int CANT_ARGS_MIN = 1;
+const int CANT_ARGS_MIN = 2;
 const int CANT_ARGS_MAX = 3;
 
 const int EXITO = 0;
@@ -27,6 +27,12 @@ const int ERROR_ARGS = 4;
 
 const char BARCO = 'B';
 const char VACIO = '-';
+const char AGUA = 'A';
+
+const char ESTE = 'E';
+const char OESTE = 'O';
+const char NORTE = 'N';
+const char SUR = 'S';
 
 typedef struct barco_usuario {
     int largo;
@@ -56,11 +62,26 @@ void posicionar_barcos(char usuario_tablero[MAX_FILAS][MAX_COLUMNAS], barco_usua
             for(int b = 0; b < CANT_BARCOS; b++){   
                 if (i == barco_usuario[b].fila && j == barco_usuario[b].columna){
                     usuario_tablero[i][j]=BARCO;
-                    if (barco_usuario[b].direccion==)
-                    {
-                        /* code */
+                    if (barco_usuario[b].direccion==ESTE){
+                        for(int p = 1; p < barco_usuario[b].largo; p++){
+                            usuario_tablero[i][j+p] = BARCO;
+                        }
                     }
-                    
+                    if (barco_usuario[b].direccion==OESTE){
+                        for(int p = 1; p < barco_usuario[b].largo; p++){
+                            usuario_tablero[i][j-p] = BARCO;
+                        }
+                    }
+                    if (barco_usuario[b].direccion==NORTE){
+                        for(int p = 1; p < barco_usuario[b].largo; p++){
+                            usuario_tablero[i-p][j] = BARCO;
+                        }
+                    }
+                    if (barco_usuario[b].direccion==SUR){
+                        for(int p = 1; p < barco_usuario[b].largo; p++){
+                            usuario_tablero[i+p][j] = BARCO;
+                        }
+                    }
                 } else if (usuario_tablero[i][j] != BARCO ) {
                     usuario_tablero[i][j]=VACIO;
                 }
@@ -70,6 +91,7 @@ void posicionar_barcos(char usuario_tablero[MAX_FILAS][MAX_COLUMNAS], barco_usua
 }
 
 void imprimir_tablero(char usuario_tablero[MAX_FILAS][MAX_COLUMNAS]){
+    printf("BIENVENIDO A LA BATALLA NAVAL\n");
     for (int i = 0; i < MAX_FILAS; i++){
         for (int j = 0; j < MAX_COLUMNAS; j++){
             printf("%c ", usuario_tablero[i][j]);
@@ -78,13 +100,35 @@ void imprimir_tablero(char usuario_tablero[MAX_FILAS][MAX_COLUMNAS]){
     }
 }
 
+void realizar_jugada( int* fila_disparo, int* col_disparo){
+    printf("Ingrese las coordendas de su proximo disparo:");
+    scanf("%i;%i", fila_disparo, col_disparo);
+}
+
+void imprimir_tablero_oponente(char enemigo_tablero[MAX_FILAS][MAX_COLUMNAS],int fila_disparo,int col_disparo){
+    for (int i = 0; i < MAX_FILAS; i++){
+        for(int j = 0; j < MAX_COLUMNAS; j++){
+            if(i == fila_disparo && j == col_disparo){
+                if (enemigo_tablero[i][j] != BARCO){
+                    enemigo_tablero[i][j] = AGUA; 
+                }
+                printf("%c ",enemigo_tablero[i][j]);
+            } else {
+                enemigo_tablero[i][j] = VACIO;
+                printf("%c ",enemigo_tablero[i][j]);
+            }
+        }
+        printf("\n");
+    }
+}
+
 
 int main(int argc, char* argv[]){
     char usuario_tablero[MAX_FILAS][MAX_COLUMNAS];
-    // char oponente_tablero[MAX_FILAS][MAX_COLUMNAS];
+    char oponente_tablero[MAX_FILAS][MAX_COLUMNAS];
     barco_usuario_t barco_usuario[CANT_BARCOS];
 
-    if (argc < CANT_ARGS_MIN || argc > CANT_ARGS_MAX){
+    if (argc != CANT_ARGS_MAX){
         printf ("Error en la cantidad de argumentos");
         return ERROR_ARGS;
     }
@@ -93,8 +137,12 @@ int main(int argc, char* argv[]){
     }
     printf("inicialización correcta\n");
     posicionar_barcos(usuario_tablero, barco_usuario);
-
     imprimir_tablero(usuario_tablero);
 
+    int fila_disparo;
+    int col_disparo;
+    realizar_jugada(&fila_disparo, &col_disparo);
+    system("clear");
+    imprimir_tablero_oponente(oponente_tablero, fila_disparo, col_disparo);
     return EXITO;
 }
