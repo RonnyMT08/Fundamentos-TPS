@@ -1,8 +1,5 @@
-fila;columna;direccion;largo
-int;int;char;int
-
-1;1;E;5
-1;1;E;4
-1;1;E;3
-1;1;E;3
-1;1;E;2
+9;9;N;5
+9;1;E;4
+7;4;E;3
+6;2;N;3
+4;6;N;2
