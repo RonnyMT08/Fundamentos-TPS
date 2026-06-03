@@ -1,5 +1,5 @@
-// gcc *.c oponente.o -o batalla_naval -std=c99 -Wall -Wconversion -Werror -lm
-// ./batalla_naval <archivo_barcos> <archivo_reporte>
+// gcc *.c -g oponente.o -o batalla_naval -std=c99 -Wall -Wconversion -Werror -lm
+// ./batalla_naval barcos.csv reportes.csv
 #include "oponente.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,7 +12,7 @@
 #define ARCH_REPORTS "reportes.csv"
 #define LECTURA "r"
 #define ESCRITURA "w"
-#define FORMATO_LECTURA_BARCOS "%i;%i;%[^;];%i\n"
+#define FORMATO_LECTURA_BARCOS "%i;%i;%c;%i"
 
 #define FORMATO_LECTURA_SOBRES  "%i;%c\n"
 #define FORMATO_ESCRITURA_FIGUS "%i;%s;%s\n"
@@ -34,60 +34,79 @@ const char OESTE = 'O';
 const char NORTE = 'N';
 const char SUR = 'S';
 
-typedef struct barco_usuario {
-    int largo;
+typedef struct posiciones {
     int fila;
-    int columna;
+    int columna; 
     char direccion;
-} barco_usuario_t;
+    int largo;
+} posicion_t;
 
-int guardar_barco_usuario(barco_usuario_t barco_usuario[CANT_BARCOS], char* ruta){
+void posicionar_largo_bar(barco_t *barco, posicion_t posicion){
+    (*barco).largo = posicion.largo;
+    (*barco).posiciones[0].fila = posicion.fila;
+    (*barco).posiciones[0].columna = posicion.columna;
+    for (int i = 1; i < posicion.largo; i++){
+        if (posicion.direccion == ESTE){
+            (*barco).posiciones[i].fila = posicion.fila;
+            (*barco).posiciones[i].columna = posicion.columna+i;
+        } else if (posicion.direccion == OESTE){
+            (*barco).posiciones[i].fila = posicion.fila;
+            (*barco).posiciones[i].columna = posicion.columna-i;
+        } else if (posicion.direccion == NORTE){
+            (*barco).posiciones[i].fila = posicion.fila-i;
+            (*barco).posiciones[i].columna = posicion.columna;
+        } else if (posicion.direccion == SUR){
+            (*barco).posiciones[i].fila = posicion.fila+i;
+            (*barco).posiciones[i].columna = posicion.columna;
+        }
+    }
+}
+
+void guardar_barco(posicion_t posiciones[CANT_BARCOS], barco_t barcos_jugador[CANT_BARCOS]){
+    for (int i = 0; i < CANT_BARCOS; i++){
+        posicionar_largo_bar(&barcos_jugador[i], posiciones[i]);
+    }
+}
+
+int guardar_barcos_jugador(barco_t barcos_jugador[CANT_BARCOS], char* ruta){
     FILE* arch_pos_barc = fopen(ruta, LECTURA);
     if (!arch_pos_barc){
         printf("Error al abrir el archivo de posiciones de los barcos\n");
         return ERROR_APERTURA;
     }
-    /*Cargar los barcos al tablero*/
-    
+    posicion_t posiciones[CANT_BARCOS];
     for (int i = 0; i < CANT_BARCOS; i++){
-        fscanf(arch_pos_barc,FORMATO_LECTURA_BARCOS, &barco_usuario[i].fila, &barco_usuario[i].columna, &barco_usuario[i].direccion, &barco_usuario[i].largo);
+        int leidos = fscanf(arch_pos_barc, FORMATO_LECTURA_BARCOS,
+            &posiciones[i].fila,
+            &posiciones[i].columna,
+            &posiciones[i].direccion,
+            &posiciones[i].largo);
+        if (leidos != 4){
+            printf("Error de formato en el archivo de barcos\n");
+            fclose(arch_pos_barc);
+            return ERROR;
+        }
     }
     fclose(arch_pos_barc);
+    guardar_barco(posiciones, barcos_jugador);
     return EXITO;
 }
 
-void posicionar_barcos(char usuario_tablero[MAX_FILAS][MAX_COLUMNAS], barco_usuario_t barco_usuario[CANT_BARCOS]){
+void posicionar_barcos(char usuario_tablero[MAX_FILAS][MAX_COLUMNAS], barco_t barco_usuario[CANT_BARCOS]){
     for (int i = 0; i < MAX_FILAS; i++){
         for (int j = 0; j < MAX_COLUMNAS; j++){
-            for(int b = 0; b < CANT_BARCOS; b++){   
-                if (i == barco_usuario[b].fila && j == barco_usuario[b].columna){
-                    usuario_tablero[i][j]=BARCO;
-                    if (barco_usuario[b].direccion==ESTE){
-                        for(int p = 1; p < barco_usuario[b].largo; p++){
-                            usuario_tablero[i][j+p] = BARCO;
-                        }
-                    }
-                    if (barco_usuario[b].direccion==OESTE){
-                        for(int p = 1; p < barco_usuario[b].largo; p++){
-                            usuario_tablero[i][j-p] = BARCO;
-                        }
-                    }
-                    if (barco_usuario[b].direccion==NORTE){
-                        for(int p = 1; p < barco_usuario[b].largo; p++){
-                            usuario_tablero[i-p][j] = BARCO;
-                        }
-                    }
-                    if (barco_usuario[b].direccion==SUR){
-                        for(int p = 1; p < barco_usuario[b].largo; p++){
-                            usuario_tablero[i+p][j] = BARCO;
-                        }
-                    }
-                } else if (usuario_tablero[i][j] != BARCO ) {
-                    usuario_tablero[i][j]=VACIO;
-                }
+            usuario_tablero[i][j] = VACIO;
+        }
+    }
+    for (int barco = 0; barco < CANT_BARCOS; barco++){
+        for (int largo = 0; largo < barco_usuario[barco].largo; largo++){
+            int fila = barco_usuario[barco].posiciones[largo].fila;
+            int columna = barco_usuario[barco].posiciones[largo].columna;
+            if (fila >= 0 && fila < MAX_FILAS && columna >= 0 && columna < MAX_COLUMNAS){
+                usuario_tablero[fila][columna] = BARCO;
             }
         }
-    }   
+    }
 }
 
 void imprimir_tablero(char usuario_tablero[MAX_FILAS][MAX_COLUMNAS]){
@@ -126,17 +145,26 @@ void imprimir_tablero_oponente(char enemigo_tablero[MAX_FILAS][MAX_COLUMNAS],int
 int main(int argc, char* argv[]){
     char usuario_tablero[MAX_FILAS][MAX_COLUMNAS];
     char oponente_tablero[MAX_FILAS][MAX_COLUMNAS];
-    barco_usuario_t barco_usuario[CANT_BARCOS];
+    barco_t barcos_jugador[CANT_BARCOS];
+    for (int i = 0; i < CANT_BARCOS; i++) {
+        barcos_jugador[i].posiciones = malloc(sizeof(coordenada_t) * MAX_FILAS);
+        if (!barcos_jugador[i].posiciones){
+            printf("Error al reservar memoria para las posiciones de los barcos\n");
+            return ERROR;
+        }
+    }
+    // barco_usuario_t barco_usuario[CANT_BARCOS];
 
     if (argc != CANT_ARGS_MAX){
         printf ("Error en la cantidad de argumentos");
         return ERROR_ARGS;
     }
-    if (guardar_barco_usuario(barco_usuario, argv[1]) != 0){
+    if (guardar_barcos_jugador(barcos_jugador, argv[1]) != 0){
         return ERROR;
     }
     printf("inicialización correcta\n");
-    posicionar_barcos(usuario_tablero, barco_usuario);
+    posicionar_barcos(usuario_tablero, barcos_jugador);
+
     imprimir_tablero(usuario_tablero);
 
     int fila_disparo;
@@ -144,5 +172,10 @@ int main(int argc, char* argv[]){
     realizar_jugada(&fila_disparo, &col_disparo);
     system("clear");
     imprimir_tablero_oponente(oponente_tablero, fila_disparo, col_disparo);
+
+
+    for (int i = 0; i < CANT_BARCOS; i++) {
+        free(barcos_jugador[i].posiciones);
+    }
     return EXITO;
 }
