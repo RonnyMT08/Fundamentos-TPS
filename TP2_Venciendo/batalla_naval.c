@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 
 #define MAX_FILAS 10
@@ -49,6 +50,30 @@ typedef struct posiciones {
     int largo;
 } posicion_t;
 
+int validar_posiciones_archivo(posicion_t posiciones[CANT_BARCOS]){
+    bool posiciones_validas = true;
+    int i = 0;
+    while (i < CANT_BARCOS && !posiciones_validas){
+        if( !(posiciones[i].fila >= 0 && posiciones[i].columna <10 )){
+            posiciones_validas = false;
+        } 
+        if( !(posiciones[i].direccion == ESTE || posiciones[i].direccion == OESTE || posiciones[i].direccion == NORTE || posiciones[i].direccion == SUR )){
+            posiciones_validas = false;
+        }
+        if( !(posiciones[i].largo > 0 && posiciones[i].largo <= 5)){
+            posiciones_validas = false;
+        }
+    }
+
+    if (!posiciones_validas){
+        return ERROR;
+    }
+
+    return EXITO;
+
+}
+
+
 void posicionar_largo_bar(barco_t* barco, posicion_t posicion){
     (*barco).largo = posicion.largo;
     (*barco).posiciones[0].fila = posicion.fila;
@@ -79,7 +104,7 @@ void guardar_barco(posicion_t posiciones[CANT_BARCOS], barco_t barcos_jugador[CA
 int guardar_barcos_jugador(barco_t barcos_jugador[CANT_BARCOS], char* archivo_barcos){
     FILE* arch_pos_barc = fopen(archivo_barcos, LECTURA);
     if (!arch_pos_barc){
-        printf("Error al abrir el archivo de posiciones de los barcos\n");
+        printf("Error al abrir el archivo de posiciones de los barcos(posiblemente no exista)\n");
         return ERROR_APERTURA;
     }
     posicion_t posiciones[CANT_BARCOS];
@@ -109,6 +134,13 @@ int guardar_barcos_jugador(barco_t barcos_jugador[CANT_BARCOS], char* archivo_ba
         }
     }
     fclose(arch_pos_barc);
+    int archivos_validos;
+    archivos_validos = validar_posiciones_archivo(posiciones);
+    if (archivos_validos != EXITO ){
+        printf("Error en el contenido del archivo barcos.csv\n");
+        return ERROR;
+    }
+
     guardar_barco(posiciones, barcos_jugador);
     return EXITO;
 }
@@ -266,7 +298,7 @@ int main(int argc, char* argv[]){
     }
     
     if (argc != CANT_ARGS_MAX){
-        printf ("Error en la cantidad de argumentos");
+        printf ("Error en la cantidad de argumentos ejemplo: ./batalla_naval <barcos.csv> <reportes.csv>\n");
         for (int i = 0; i < CANT_BARCOS; i++) {
             free(barcos_jugador[i].posiciones);
         }
