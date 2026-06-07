@@ -9,7 +9,7 @@
 
 #define MAX_FILAS 10
 #define MAX_COLUMNAS 10
-#define MAXIMO_JUGADAS 100 
+#define MAXIMO_JUGADAS 5
 
 #define EMOJI_NUBES "\U0001f32b\uFE0F"
 #define EMOJI_AGUA "\U0001f7e6"
@@ -53,7 +53,7 @@ typedef struct posiciones {
 int validar_posiciones_archivo(posicion_t posiciones[CANT_BARCOS]){
     bool posiciones_validas = true;
     int i = 0;
-    while (i < CANT_BARCOS && !posiciones_validas){
+    while (i < CANT_BARCOS && posiciones_validas){
         if( !(posiciones[i].fila >= 0 && posiciones[i].columna <10 )){
             posiciones_validas = false;
         } 
@@ -63,6 +63,7 @@ int validar_posiciones_archivo(posicion_t posiciones[CANT_BARCOS]){
         if( !(posiciones[i].largo > 0 && posiciones[i].largo <= 5)){
             posiciones_validas = false;
         }
+        i++;
     }
 
     if (!posiciones_validas){
@@ -133,6 +134,7 @@ int guardar_barcos_jugador(barco_t barcos_jugador[CANT_BARCOS], char* archivo_ba
             return ERROR;
         }
     }
+
     fclose(arch_pos_barc);
     int archivos_validos;
     archivos_validos = validar_posiciones_archivo(posiciones);
@@ -184,7 +186,7 @@ void imprimir_tablero(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS]){
             printf("%i ", i+1);
         }
         for (int j = 0; j < MAX_COLUMNAS; j++){
-            if( i > 0 && jugador_tablero[i][j] == BARCO){
+            if(jugador_tablero[i][j] == BARCO){
                 printf("%s ", EMOJI_BARCO);
             } else if (jugador_tablero[i][j] == BARCO_IMPACTADO){
                 printf("%s ",EMOJI_ATACADO);
@@ -232,11 +234,16 @@ void imprimir_tablero_oponente(char enemigo_tablero[MAX_FILAS][MAX_COLUMNAS]){
 void pedir_jugada( int* fila_disparo, int* columna_disparo){
     int fila = 0;
     int columna = 0; 
+    int leidos;
     printf("Ingrese las coordendas de su\npróximo disparo <fila>;<columna>:");
-    scanf("%i;%i", &fila, &columna);
-    while (!((fila > 0 && fila <= 10) && (columna > 0 && columna <= 10))){
+    leidos = scanf("%i;%i", &fila, &columna);
+    while (leidos == 2 && !((fila > 0 && fila <= 10) && (columna > 0 && columna <= 10))){
         printf("Por favor ingrese las coordendas\npor ejemplo '1;1':\n");
-        scanf("%d;%d ", &fila, &columna);
+        leidos = scanf("%d;%d", &fila, &columna);
+    }
+    if (leidos != 2){
+        fila = 0;
+        columna = 0;
     }
     (*fila_disparo) = fila;
     (*columna_disparo) = columna;
@@ -277,52 +284,57 @@ void accionar_disparo_oponete(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], coo
 }
 
 
-int estado_juego(){
-    int salida = 1;
-    // printf("para salir: 0");
-    // scanf("%i", &salida);
-    return salida;
+int estado_juego(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], char oponente_tablero[MAX_FILAS][MAX_COLUMNAS]){
+    for (int i = 0; i < MAX_FILAS; i++){
+        for (int j= 0; j < MAX_COLUMNAS; j++){
+            if (jugador_tablero[i][j] == BARCO){
+                return 1;
+            }
+        }
+    }
+    return 0;
 }
+
+
+
+
+
 
 int main(int argc, char* argv[]){
     char jugador_tablero[MAX_FILAS][MAX_COLUMNAS];
     char oponente_tablero[MAX_FILAS][MAX_COLUMNAS];
     barco_t barcos_jugador[CANT_BARCOS];
 
+    if (argc != CANT_ARGS_MAX){
+        printf ("Error en la cantidad de argumentos ejemplo: ./batalla_naval <barcos.csv> <reportes.csv>\n");
+        return ERROR_ARGS;
+    }
+    
     for (int i = 0; i < CANT_BARCOS; i++) {
         barcos_jugador[i].posiciones = malloc(sizeof(coordenada_t) * MAXIMO_JUGADAS);
         if (!barcos_jugador[i].posiciones){
             printf("Error al reservar memoria para las posiciones de los barcos\n");
+            for(int j = 0; j < i; j++){
+                free(barcos_jugador[j].posiciones);
+            }
             return ERROR;
         }
     }
     
-    if (argc != CANT_ARGS_MAX){
-        printf ("Error en la cantidad de argumentos ejemplo: ./batalla_naval <barcos.csv> <reportes.csv>\n");
-        for (int i = 0; i < CANT_BARCOS; i++) {
-            free(barcos_jugador[i].posiciones);
-        }
-        return ERROR_ARGS;
-    }
     if (procesar_archivos(barcos_jugador, argv[1]) != 0){
         for (int i = 0; i < CANT_BARCOS; i++) {
             free(barcos_jugador[i].posiciones);
         }
         return ERROR;
     }
+
     oponente_t *oponente;
     oponente = oponente_crear(barcos_jugador);
-    if (!oponente){
-        printf("Error al reservar memoria para el oponente tda\n");
-        for (int i = 0; i < CANT_BARCOS; i++) {
-            free(barcos_jugador[i].posiciones);
-        }
-        return ERROR;
-    }
 
     inicializar_tableros(jugador_tablero, oponente_tablero);
     posicionar_barcos(jugador_tablero, barcos_jugador);
-    while (estado_juego() != 0){
+    int barcos_hundidos = 0;
+    while (estado_juego(jugador_tablero, oponente_tablero) != 0 && barcos_hundidos < CANT_BARCOS){
         system("clear");
         coordenada_t posicion_disparo;
         coordenada_t posicion_disparo_oponente;
@@ -331,11 +343,17 @@ int main(int argc, char* argv[]){
         pedir_jugada(&posicion_disparo.fila, &posicion_disparo.columna);
         char impacto;
         impacto = oponente_recibe_disparo(oponente, posicion_disparo);
+        if (impacto == 'H'){
+            barcos_hundidos++;
+        }
         accionar_disparo(oponente_tablero, posicion_disparo, impacto);
         posicion_disparo_oponente = oponente_realiza_disparo(oponente);
         accionar_disparo_oponete(jugador_tablero, posicion_disparo_oponente);
-        estado_juego();
     }
+
+    printf("=====================================\n");
+    printf("===========JUEGO TERMINADO===========\n");
+    printf("=====================================\n");
 
     for (int i = 0; i < CANT_BARCOS; i++) {
         free(barcos_jugador[i].posiciones);
