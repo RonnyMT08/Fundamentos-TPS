@@ -9,7 +9,7 @@
 
 #define MAX_FILAS 10
 #define MAX_COLUMNAS 10
-#define MAXIMO_JUGADAS 5
+#define MAXIMO_LARGO_BARCO 5
 
 #define EMOJI_NUBES "\U0001f32b\uFE0F"
 #define EMOJI_AGUA "\U0001f7e6"
@@ -267,8 +267,8 @@ void accionar_disparo(char tablero_oponente[MAX_FILAS][MAX_COLUMNAS], coordenada
     }
 }
 void accionar_disparo_oponete(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], coordenada_t posicion_disparo_oponente){
-    int fila_disparo = posicion_disparo_oponente.fila -1;
-    int columna_disparo = posicion_disparo_oponente.columna -1;
+    int fila_disparo = posicion_disparo_oponente.fila;
+    int columna_disparo = posicion_disparo_oponente.columna;
 
     for (int i = 0; i < MAX_FILAS; i++ ){
         for(int j = 0; j < MAX_COLUMNAS; j++){
@@ -295,11 +295,6 @@ int estado_juego(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], char oponente_ta
     return 0;
 }
 
-
-
-
-
-
 int main(int argc, char* argv[]){
     char jugador_tablero[MAX_FILAS][MAX_COLUMNAS];
     char oponente_tablero[MAX_FILAS][MAX_COLUMNAS];
@@ -311,7 +306,7 @@ int main(int argc, char* argv[]){
     }
     
     for (int i = 0; i < CANT_BARCOS; i++) {
-        barcos_jugador[i].posiciones = malloc(sizeof(coordenada_t) * MAXIMO_JUGADAS);
+        barcos_jugador[i].posiciones = malloc(sizeof(coordenada_t) * MAXIMO_LARGO_BARCO);
         if (!barcos_jugador[i].posiciones){
             printf("Error al reservar memoria para las posiciones de los barcos\n");
             for(int j = 0; j < i; j++){
@@ -350,10 +345,17 @@ int main(int argc, char* argv[]){
         posicion_disparo_oponente = oponente_realiza_disparo(oponente);
         accionar_disparo_oponete(jugador_tablero, posicion_disparo_oponente);
     }
+    system("clear");
+    if (barcos_hundidos == CANT_BARCOS){
+        printf("==============PERDISTE==============\n");
+        printf("===========JUEGO TERMINADO===========\n");
+        printf("=====================================\n");
+    } else {
+        printf("================GANASTE==============\n");
+        printf("===========JUEGO TERMINADO===========\n");
+        printf("=====================================\n");
+    }
 
-    printf("=====================================\n");
-    printf("===========JUEGO TERMINADO===========\n");
-    printf("=====================================\n");
 
     for (int i = 0; i < CANT_BARCOS; i++) {
         free(barcos_jugador[i].posiciones);
