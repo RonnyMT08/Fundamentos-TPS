@@ -10,6 +10,9 @@
 #define MAX_FILAS 10
 #define MAX_COLUMNAS 10
 #define MAXIMO_LARGO_BARCO 5
+#define MAX_CATEGORIAS 50
+#define MAX_VALORES 6
+#define CANT_CATEGORIAS 6
 
 #define EMOJI_NUBES "\U0001f32b\uFE0F"
 #define EMOJI_AGUA "\U0001f7e6"
@@ -43,12 +46,18 @@ const char OESTE = 'O';
 const char NORTE = 'N';
 const char SUR = 'S';
 
+const char CATEGORIAS[CANT_CATEGORIAS][MAX_CATEGORIAS] = {"Balas aliadas acertadas", "Balas aliadas erradas", "Balas enemigas acertadas", "Balas enemigas erradas", "Barcos enemigos hundidos", "Barcos aliados sobrevivientes"};
+
 typedef struct posiciones {
     int fila;
     int columna; 
     char direccion;
     int largo;
 } posicion_t;
+
+typedef struct balas {
+    int valores_categoria[MAX_VALORES];
+} balas_t;
 
 int validar_posiciones_archivo(posicion_t posiciones[CANT_BARCOS]){
     bool posiciones_validas = true;
@@ -73,7 +82,6 @@ int validar_posiciones_archivo(posicion_t posiciones[CANT_BARCOS]){
     return EXITO;
 
 }
-
 
 void posicionar_largo_bar(barco_t* barco, posicion_t posicion){
     (*barco).largo = posicion.largo;
@@ -153,6 +161,13 @@ int procesar_archivos(barco_t barcos_jugador[CANT_BARCOS], char* archivo_barcos 
     }
     return EXITO;
 }
+
+void inicializar_reporte(balas_t* reporte_balas){
+    for (int i = 0; i < MAX_CATEGORIAS; i++){
+        (*reporte_balas).valores_categoria[i] = 0;
+    }
+}
+
 
 void inicializar_tableros(char tablero_jugador[MAX_FILAS][MAX_COLUMNAS], char tablero_oponente[MAX_FILAS][MAX_COLUMNAS]){
     for(int i = 0; i < MAX_FILAS; i++){
@@ -254,18 +269,19 @@ void imprimir_tableros(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], char opone
     imprimir_tablero_oponente(oponente_tablero);
 }
 
-void accionar_disparo(char tablero_oponente[MAX_FILAS][MAX_COLUMNAS], coordenada_t posicion_disparo, char impacto){
+void accionar_disparo(char tablero_oponente[MAX_FILAS][MAX_COLUMNAS], coordenada_t posicion_disparo, char impacto_bala){
     int fila_disparo = posicion_disparo.fila-1;
     int columna_disparo = posicion_disparo.columna-1;
 
     for (int i = 0; i < MAX_FILAS; i++ ){
         for(int j = 0; j < MAX_COLUMNAS; j++){
             if ( fila_disparo == i && columna_disparo == j){
-                tablero_oponente[i][j] = impacto;
+                tablero_oponente[i][j] = impacto_bala;
             }
         }
     }
 }
+
 void accionar_disparo_oponete(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], coordenada_t posicion_disparo_oponente){
     int fila_disparo = posicion_disparo_oponente.fila;
     int columna_disparo = posicion_disparo_oponente.columna;
@@ -283,16 +299,30 @@ void accionar_disparo_oponete(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], coo
     }
 }
 
-
 int estado_juego(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], char oponente_tablero[MAX_FILAS][MAX_COLUMNAS]){
+    int cantidad_barcos = 0;
     for (int i = 0; i < MAX_FILAS; i++){
         for (int j= 0; j < MAX_COLUMNAS; j++){
             if (jugador_tablero[i][j] == BARCO){
-                return 1;
+                cantidad_barcos ++;
             }
         }
     }
+    if (cantidad_barcos == 0){
+        return -1;
+    }
     return 0;
+}
+
+int procesar_reportes(FILE* archivo_reportes, balas_t reporte_balas){
+    int leidos = 0;
+    for (int i = 0; i < MAX_CATEGORIAS; i++){
+        leidos = fprintf(archivo_reportes, "%s ;%i\n", CATEGORIAS[i], reporte_balas.valores_categoria[i]);
+    }
+    if (leidos == 6){
+        return EXITO;
+    }
+    return ERROR;
 }
 
 int main(int argc, char* argv[]){
@@ -325,10 +355,14 @@ int main(int argc, char* argv[]){
 
     oponente_t *oponente;
     oponente = oponente_crear(barcos_jugador);
-
+    
+    balas_t reporte_balas;
+    inicializar_reporte(&reporte_balas);
     inicializar_tableros(jugador_tablero, oponente_tablero);
     posicionar_barcos(jugador_tablero, barcos_jugador);
     int barcos_hundidos = 0;
+
+
     while (estado_juego(jugador_tablero, oponente_tablero) != 0 && barcos_hundidos < CANT_BARCOS){
         system("clear");
         coordenada_t posicion_disparo;
@@ -336,15 +370,38 @@ int main(int argc, char* argv[]){
 
         imprimir_tableros(jugador_tablero, oponente_tablero);
         pedir_jugada(&posicion_disparo.fila, &posicion_disparo.columna);
-        char impacto;
-        impacto = oponente_recibe_disparo(oponente, posicion_disparo);
-        if (impacto == 'H'){
-            barcos_hundidos++;
+        char impacto_bala = oponente_recibe_disparo(oponente, posicion_disparo);
+
+        if (impacto_bala == 'H'){
+            reporte_balas.valores_categoria[1] +=1 ;
         }
-        accionar_disparo(oponente_tablero, posicion_disparo, impacto);
+        accionar_disparo(oponente_tablero, posicion_disparo, impacto_bala);
+        
         posicion_disparo_oponente = oponente_realiza_disparo(oponente);
         accionar_disparo_oponete(jugador_tablero, posicion_disparo_oponente);
     }
+
+    FILE* archivo_reportes = fopen(argv[2], "w");
+    if(!archivo_reportes){
+        printf("Error en abrir el archivo de reportes");
+        for (int i = 0; i < CANT_BARCOS; i++) {
+            free(barcos_jugador[i].posiciones);
+        }   
+        oponente_destruir(oponente);
+        return ERROR;    
+    }
+
+    if (procesar_reportes(archivo_reportes, reporte_balas) == ERROR){
+        fclose(archivo_reportes);
+        for (int i = 0; i < CANT_BARCOS; i++) {
+            free(barcos_jugador[i].posiciones);
+        }   
+        oponente_destruir(oponente);
+        return ERROR;
+    }
+    fclose(archivo_reportes);
+
+
     system("clear");
     if (barcos_hundidos == CANT_BARCOS){
         printf("==============PERDISTE==============\n");
