@@ -6,7 +6,8 @@
 #include <string.h>
 #include <stdbool.h>
 
-
+#define MIN_FILAS 1
+#define MIN_COLUMNAS 1
 #define MAX_FILAS 10
 #define MAX_COLUMNAS 10
 #define MAXIMO_LARGO_BARCO 5
@@ -25,9 +26,6 @@
 #define ESCRITURA "w"
 #define FORMATO_LECTURA_BARCOS "%i;%i;%c;%i"
 
-#define FORMATO_LECTURA_SOBRES  "%i;%c\n"
-#define FORMATO_ESCRITURA_FIGUS "%i;%s;%s\n"
-
 const int CANT_ARGS_MIN = 2;
 const int CANT_ARGS_MAX = 3;
 
@@ -36,15 +34,22 @@ const int ERROR = -1;
 const int ERROR_APERTURA = 3; 
 const int ERROR_ARGS = 4;
 
+const int MIN_LARGO_BARCO = 1;
+const int MAX_LARGO_BARCO = 5;
+
 const char BARCO = 'B';
-const char BARCO_IMPACTADO = 'H';
+const char TOCADO = 'T';
 const char VACIO = '-';
 const char AGUA = 'A';
+const char HUNDIDO = 'H';
 
 const char ESTE = 'E';
 const char OESTE = 'O';
 const char NORTE = 'N';
 const char SUR = 'S';
+
+const int ESTADO_JUGANDO = -1;
+const int ESTADO_TERMINADO = 0;
 
 const char CATEGORIAS[CANT_CATEGORIAS][MAX_CATEGORIAS] = {"Balas aliadas acertadas", "Balas aliadas erradas", "Balas enemigas acertadas", "Balas enemigas erradas", "Barcos enemigos hundidos", "Barcos aliados sobrevivientes"};
 
@@ -59,70 +64,78 @@ typedef struct balas {
     int valores_categoria[MAX_VALORES];
 } balas_t;
 
+/* 
+    Precondiciones: -
+    Postcondiciones: Verifica que los datos de los barcos obtenidos del archivo 'barcos.csv', devuelve EXITO si los datos son correctos. ERROR si algun dato de barco esta escrito de manera erronea.
+*/ 
 int validar_posiciones_archivo(posicion_t posiciones[CANT_BARCOS]){
     bool posiciones_validas = true;
     int i = 0;
     while (i < CANT_BARCOS && posiciones_validas){
-        if( !(posiciones[i].fila >= 1 && posiciones[i].fila <= 10 && posiciones[i].columna >= 1 && posiciones[i].columna <= 10)){
+        if( !(posiciones[i].fila >= MIN_FILAS && posiciones[i].fila <= MAX_FILAS && posiciones[i].columna >= MIN_COLUMNAS && posiciones[i].columna <= MAX_COLUMNAS)){
             posiciones_validas = false;
         } 
         if( !(posiciones[i].direccion == ESTE || posiciones[i].direccion == OESTE || posiciones[i].direccion == NORTE || posiciones[i].direccion == SUR )){
             posiciones_validas = false;
         }
-        if( !(posiciones[i].largo > 0 && posiciones[i].largo <= 5)){
+        if( !(posiciones[i].largo >= MIN_LARGO_BARCO && posiciones[i].largo <= MAX_LARGO_BARCO)){
             posiciones_validas = false;
         }
         i++;
     }
-
     if (!posiciones_validas){
         return ERROR;
     }
-
     return EXITO;
-
 }
 
-void posicionar_largo_bar(barco_t* barco, posicion_t posicion){
-    (*barco).largo = posicion.largo;
-    (*barco).posiciones[0].fila = posicion.fila - 1;
-    (*barco).posiciones[0].columna = posicion.columna - 1;
+/* 
+    Precondiciones: -
+    Postcondiciones: Guarda los valores en 'barco_jugador' de las coordenadas del barco según su largo(2,3,4,5) y direccion(ESTE, OESTE, NORTE, SUR) dados por el parametro de 'posicion'.
+*/
+void guardar_direccion_posicion(barco_t* barco_jugador, posicion_t posicion){
+    int posicion_fila = posicion.fila -1;
+    int posicion_columna = posicion.columna -1;
+
     for (int i = 1; i < posicion.largo; i++){
         if (posicion.direccion == ESTE){
-            (*barco).posiciones[i].fila = posicion.fila - 1;
-            (*barco).posiciones[i].columna = (posicion.columna - 1) + i;
+            (*barco_jugador).posiciones[i].fila = posicion_fila;
+            (*barco_jugador).posiciones[i].columna = (posicion_columna) + i;
         } else if (posicion.direccion == OESTE){
-            (*barco).posiciones[i].fila = posicion.fila - 1;
-            (*barco).posiciones[i].columna = (posicion.columna - 1) - i;
+            (*barco_jugador).posiciones[i].fila = posicion_fila;
+            (*barco_jugador).posiciones[i].columna = (posicion_columna) - i;
         } else if (posicion.direccion == NORTE){
-            (*barco).posiciones[i].fila = (posicion.fila - 1) - i;
-            (*barco).posiciones[i].columna = posicion.columna - 1;
+            (*barco_jugador).posiciones[i].fila = (posicion_fila) - i;
+            (*barco_jugador).posiciones[i].columna = posicion_columna;
         } else if (posicion.direccion == SUR){
-            (*barco).posiciones[i].fila = (posicion.fila - 1) + i;
-            (*barco).posiciones[i].columna = posicion.columna - 1;
+            (*barco_jugador).posiciones[i].fila = (posicion_fila) + i;
+            (*barco_jugador).posiciones[i].columna = posicion_columna;
         }
     }
 }
 
+/*
+    Precondiciones: -
+    Postcondiciones: Guarda los valores en 'barco_jugador' de las coordenadas de cada barco dada por el parametro 'posicion' con la primera coordenada(fila,columna), largo(2,3,4,5) y dirección(ESTE, OESTE, NORTE, SUR).
+*/
 void guardar_barco(posicion_t posiciones[CANT_BARCOS], barco_t barcos_jugador[CANT_BARCOS]){
     for (int i = 0; i < CANT_BARCOS; i++){
-        posicionar_largo_bar(&barcos_jugador[i], posiciones[i]);
+        barcos_jugador[i].largo = posiciones[i].largo;
+        barcos_jugador[i].posiciones[0].fila = posiciones[i].fila - 1;
+        barcos_jugador[i].posiciones[0].columna = posiciones[i].columna - 1;
+        guardar_direccion_posicion(&barcos_jugador[i], posiciones[i]);
     }
 }
 
-int guardar_barcos_jugador(barco_t barcos_jugador[CANT_BARCOS], char* archivo_barcos){
-    FILE* arch_pos_barc = fopen(archivo_barcos, LECTURA);
-    if (!arch_pos_barc){
-        printf("Error al abrir el archivo de posiciones de los barcos(posiblemente no exista)\n");
-        return ERROR_APERTURA;
-    }
+/*
+    Precondiciones: -
+    Postcondiciones: Guarda en 'barcos_jugador' todas las posiciones de los barcos recibidos por en el 'archivo_pos_barcos'. Devuelve EXITO si se guardo correctamente las posiciones, ERROR en caso contrario
+*/
+int guardar_barcos_jugador(barco_t barcos_jugador[CANT_BARCOS], FILE* arch_pos_barc){
+    
     posicion_t posiciones[CANT_BARCOS];
     int linea = 0;
-    int leidos = fscanf(arch_pos_barc, FORMATO_LECTURA_BARCOS,
-        &posiciones[linea].fila,
-        &posiciones[linea].columna,
-        &posiciones[linea].direccion,
-        &posiciones[linea].largo);
+    int leidos = fscanf(arch_pos_barc, FORMATO_LECTURA_BARCOS, &posiciones[linea].fila, &posiciones[linea].columna, &posiciones[linea].direccion, &posiciones[linea].largo);
     if (leidos == EOF){
         printf("Error el archivo de bascos.csv se encuentra vacio\n");
         fclose(arch_pos_barc);
@@ -130,20 +143,15 @@ int guardar_barcos_jugador(barco_t barcos_jugador[CANT_BARCOS], char* archivo_ba
     }
 
     for (int i = 1; i < CANT_BARCOS; i++){
-        leidos = fscanf(arch_pos_barc, FORMATO_LECTURA_BARCOS,
-            &posiciones[i].fila,
-            &posiciones[i].columna,
-            &posiciones[i].direccion,
-            &posiciones[i].largo);
-        
-        if (leidos != 4){
+        leidos = fscanf(arch_pos_barc, FORMATO_LECTURA_BARCOS, &posiciones[i].fila, &posiciones[i].columna, &posiciones[i].direccion, &posiciones[i].largo);
+    
+        if (leidos != CANT_BARCOS-1){
             printf("Error en la cantidad de barcos en el archivo de barcos.csv (se necesita 5 lineas con los barcos)\n");
             fclose(arch_pos_barc);
             return ERROR;
         }
     }
 
-    fclose(arch_pos_barc);
     int archivos_validos;
     archivos_validos = validar_posiciones_archivo(posiciones);
     if (archivos_validos != EXITO ){
@@ -155,20 +163,40 @@ int guardar_barcos_jugador(barco_t barcos_jugador[CANT_BARCOS], char* archivo_ba
     return EXITO;
 }
 
+/*
+    Precondiciones: -
+    Postcondiciones: Abre en modo lectura el 'archivo_barcos', guarda los datos en 'barcos_jugador', Devuelve ERROR_APERTURA si no se pudo abrir el archivo, ERROR si no se pudo guardar los barcos. EXITO en caso contrario. 
+*/
 int procesar_archivos(barco_t barcos_jugador[CANT_BARCOS], char* archivo_barcos ){
-    if (guardar_barcos_jugador(barcos_jugador, archivo_barcos) != 0){
-        return ERROR;
+    FILE* arch_pos_barc = fopen(archivo_barcos, LECTURA);
+    if (!arch_pos_barc){
+        printf("Error al abrir el archivo de posiciones de los barcos(posiblemente no exista)\n");
+        return ERROR_APERTURA;
     }
+
+    if (guardar_barcos_jugador(barcos_jugador, arch_pos_barc) != 0){
+        return ERROR;
+        fclose(arch_pos_barc);
+    }
+    fclose(arch_pos_barc);
+
     return EXITO;
 }
 
+/*
+    Precondicones: -
+    Postcondiciones: Inicializa todos los valores de las categorias con un mismo valor inicial = 0.
+*/
 void inicializar_reporte(balas_t* reporte_balas){
     for (int i = 0; i < MAX_VALORES; i++){
         (*reporte_balas).valores_categoria[i] = 0;
     }
 }
 
-
+/*
+    Precondiciones: -
+    Postcondiciones: Inicializa todos los valores del 'tablero_jugador' y 'tablero_oponente' con VACIO(-).
+*/
 void inicializar_tableros(char tablero_jugador[MAX_FILAS][MAX_COLUMNAS], char tablero_oponente[MAX_FILAS][MAX_COLUMNAS]){
     for(int i = 0; i < MAX_FILAS; i++){
         for(int j = 0; j < MAX_COLUMNAS; j++){
@@ -178,6 +206,10 @@ void inicializar_tableros(char tablero_jugador[MAX_FILAS][MAX_COLUMNAS], char ta
     }
 }
 
+/*
+    Precondiciones: -
+    Postcondiciones: carga todas las coordenadas de los BARCOS de 'barco_jugador' en el 'jugador_tablero'.
+*/
 void posicionar_barcos(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], barco_t barco_jugador[CANT_BARCOS]){
     for (int barco = 0; barco < CANT_BARCOS; barco++){
         for (int largo = 0; largo < barco_jugador[barco].largo; largo++){
@@ -190,8 +222,11 @@ void posicionar_barcos(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], barco_t ba
     }
 }
 
-void imprimir_tablero(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS]){
-    printf("==BIENVENIDO A LA BATALLA NAVAL==\n");
+/*
+    Precondiciones: -
+    Postcondiciones: Imprime por pantalla el tablero del jugador con sus respectivos emojis(NUBES, BARCO, IMPACTO, AGUA) en cada posicion.
+*/
+void imprimir_tablero_jugador(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS]){
     printf("============MIS FLOTAS=============\n");
     printf("   01 02 03 04 05 06 07 08 09 10\n");
     for (int i = 0; i < MAX_FILAS; i++){
@@ -203,7 +238,7 @@ void imprimir_tablero(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS]){
         for (int j = 0; j < MAX_COLUMNAS; j++){
             if(jugador_tablero[i][j] == BARCO){
                 printf("%s ", EMOJI_BARCO);
-            } else if (jugador_tablero[i][j] == BARCO_IMPACTADO){
+            } else if (jugador_tablero[i][j] == TOCADO){
                 printf("%s ",EMOJI_ATACADO);
             } else if( jugador_tablero[i][j] == AGUA){
                 printf("%s ",EMOJI_AGUA);
@@ -213,14 +248,15 @@ void imprimir_tablero(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS]){
         }
         printf("\n");
     }
-    printf("=================================\n");
-
 }
 
 
-
+/*
+    Precondiciones: -
+    Postcondiciones: Imprime por pantalla el tablero del oponente con sus respectivos emojis(NUBES, BARCO, IMPACTO, AGUA) en cada posicion.
+*/
 void imprimir_tablero_oponente(char enemigo_tablero[MAX_FILAS][MAX_COLUMNAS]){
-    printf("========FLOTAS DEL OPONENTEO========\n");
+    printf("========FLOTAS DEL OPONENTE=========\n");
     printf("   01 02 03 04 05 06 07 08 09 10\n");
     for (int i = 0; i < MAX_FILAS; i++){
         if (i < 9){
@@ -243,81 +279,145 @@ void imprimir_tablero_oponente(char enemigo_tablero[MAX_FILAS][MAX_COLUMNAS]){
         }
         printf("\n");
     }
-    printf("=================================\n");
 }
 
+/*
+    Precondiciones: -
+    Postcondiciones: pide al jugador que ingrese las coordenadas del proximo disparo a realizar, carga en 'fila_diaparo' y 'columna_disparo' los valores.
+*/
 void pedir_jugada( int* fila_disparo, int* columna_disparo){
     int fila = 0;
     int columna = 0; 
-    int leidos;
     printf("Ingrese las coordendas de su\npróximo disparo <fila>;<columna>:");
-    leidos = scanf("%i;%i", &fila, &columna);
-    while (leidos == 2 && !((fila > 0 && fila <= 10) && (columna > 0 && columna <= 10))){
+    scanf("%d;%d", &fila, &columna);
+    while (! ((fila >= MIN_FILAS && fila <= MAX_FILAS) && (columna >= MIN_COLUMNAS && columna <= MAX_COLUMNAS)) ){
         printf("Por favor ingrese las coordendas\npor ejemplo '1;1':\n");
-        leidos = scanf("%d;%d", &fila, &columna);
+        scanf("%d;%d", &fila, &columna);
     }
-    if (leidos != 2){
-        fila = 0;
-        columna = 0;
-    }
-    (*fila_disparo) = fila;
-    (*columna_disparo) = columna;
+    (*fila_disparo) = fila-1;
+    (*columna_disparo) = columna-1;
 }
 
+/*
+    Precondiciones: -
+    Postcondiciones: imprime por pantalla los tableros del jugador y del oponente.
+*/
 void imprimir_tableros(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], char oponente_tablero[MAX_FILAS][MAX_COLUMNAS]){
-    imprimir_tablero(jugador_tablero);
+    printf("==BIENVENIDO A LA BATALLA NAVAL==\n");
+    imprimir_tablero_jugador(jugador_tablero);
+    printf("=================================\n");
     imprimir_tablero_oponente(oponente_tablero);
+    printf("=================================\n");
 }
 
-void accionar_disparo(char tablero_oponente[MAX_FILAS][MAX_COLUMNAS], coordenada_t posicion_disparo, char impacto_bala){
-    int fila_disparo = posicion_disparo.fila-1;
-    int columna_disparo = posicion_disparo.columna-1;
+/*
+    Precondiciones: -
+    Postcondiciones: Actualiza el valor en 'reporte_balas' segun el impacto (AGUA, TOCADO, HUNDIDO) del disparo realizado por el jugador. 
+*/
+void guardar_disparo(char impacto_disparo, balas_t* reporte_balas, int* barcos_hundidos_oponente){
+    if (impacto_disparo == AGUA){
+        (*reporte_balas).valores_categoria[1]++ ; 
+    } else if (impacto_disparo == TOCADO) {
+        (*reporte_balas).valores_categoria[0]++ ;
+    } else if (impacto_disparo == HUNDIDO){
+        (*barcos_hundidos_oponente)++;
+        (*reporte_balas).valores_categoria[0]++ ;
+        (*reporte_balas).valores_categoria[4]++ ;
+    }
+}
+
+/*
+    Precondiciones: -
+    Postcondiciones: guarda en las coordendas del tablero oponente el impacto de bala ocasionado, el minmo puede ser HUNDIDO, AGUA, TOCADA 
+*/
+void accionar_disparo_jugador(char tablero_oponente[MAX_FILAS][MAX_COLUMNAS], coordenada_t posicion_disparo, char impacto_disparo, balas_t* reporte_balas, int* barcos_hundidos_oponente){
+
+    int fila_disparo = posicion_disparo.fila;
+    int columna_disparo = posicion_disparo.columna;
 
     for (int i = 0; i < MAX_FILAS; i++ ){
         for(int j = 0; j < MAX_COLUMNAS; j++){
             if ( fila_disparo == i && columna_disparo == j){
-                tablero_oponente[i][j] = impacto_bala;
+                tablero_oponente[i][j] = impacto_disparo;
             }
         }
     }
+    guardar_disparo(impacto_disparo, &(*reporte_balas), &(*barcos_hundidos_oponente));
+
 }
 
-void accionar_disparo_oponete(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], coordenada_t posicion_disparo_oponente){
-    int fila_disparo = posicion_disparo_oponente.fila;
-    int columna_disparo = posicion_disparo_oponente.columna;
+/*
+    Precondiciones: -
+    Postcondiciones: guarda en las coordendas del tablero del jugador el impacto de bala ocasionado por el oponente, el minmo puede ser AGUA, TOCADA 
+*/
+void accionar_disparo_oponete(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], coordenada_t disparo_oponente_jugador, balas_t* reporte_balas){
+    int fila_disparo = disparo_oponente_jugador.fila;
+    int columna_disparo = disparo_oponente_jugador.columna;
 
     for (int i = 0; i < MAX_FILAS; i++ ){
         for(int j = 0; j < MAX_COLUMNAS; j++){
             if (fila_disparo == i && columna_disparo == j){
                 if ( jugador_tablero[i][j] == BARCO){
-                    jugador_tablero[i][j] = BARCO_IMPACTADO;
+                    jugador_tablero[i][j] = TOCADO;
                 } else if(jugador_tablero[i][j] == VACIO){
                     jugador_tablero[i][j] = AGUA;
                 }
             }
         }
     }
+    if (jugador_tablero[disparo_oponente_jugador.fila][disparo_oponente_jugador.columna] == BARCO){
+        (*reporte_balas).valores_categoria[2]++ ;
+    } else {
+        (*reporte_balas).valores_categoria[3]++ ;
+    }
 }
 
-int estado_juego(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS]){
+/*
+    Precondiciones: -
+    Postcondiciones: devuelve ESTADO_TERMINADO si a el jugador o a él oponente no le quedan barcos en su tablero. ESTADO_JUGANDO en caso contrario.
+*/
+int estado_juego(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], int barcos_hundidos_oponente){
+    int cant_barcos_jugador = 0;
     for (int i = 0; i < MAX_FILAS; i++){
         for (int j= 0; j < MAX_COLUMNAS; j++){
             if (jugador_tablero[i][j] == BARCO){
-                return 1;
+                cant_barcos_jugador ++;
             }
         }
     }
-    return 0;
+    if (cant_barcos_jugador == 0 || barcos_hundidos_oponente == CANT_BARCOS){
+        return ESTADO_TERMINADO;
+    }
+    return ESTADO_JUGANDO;
 }
 
+/*
+    Precondiciones: -
+    Postcondiciones: guarda en el archivo de reportes.csv las categorias (balas, barcos) y su respectivo valor, Devuelve EXITO si se guardaron correctamente los datos. ERROR en caso contrario.
+*/
 int procesar_reportes(FILE* archivo_reportes, balas_t reporte_balas){
     for (int i = 0; i < CANT_CATEGORIAS; i++){
-        if (fprintf(archivo_reportes, "%s ;%i\n", CATEGORIAS[i], reporte_balas.valores_categoria[i]) < 0){
+        if (fprintf(archivo_reportes, "%s:%i\n", CATEGORIAS[i], reporte_balas.valores_categoria[i]) < 0){
             return ERROR;
         }
     }
     return EXITO;
 }
+
+/*
+    Precondiciones: -
+    Postcondiciones: Muestra por pantalla el mensaje de GANASTE si es ganador, PERDISTE en caso contrario.
+*/
+void motrar_ganador(bool es_ganador){
+    if (es_ganador){
+        printf("================GANASTE==============\n");
+    } else {
+        printf("==============PERDISTE==============\n");
+    }
+    printf("===========JUEGO TERMINADO===========\n");
+    printf("=====================================\n");
+}
+
 
 int main(int argc, char* argv[]){
     char jugador_tablero[MAX_FILAS][MAX_COLUMNAS];
@@ -354,40 +454,22 @@ int main(int argc, char* argv[]){
     inicializar_reporte(&reporte_balas);
     inicializar_tableros(jugador_tablero, oponente_tablero);
     posicionar_barcos(jugador_tablero, barcos_jugador);
-    int barcos_hundidos = 0;
+    int barcos_hundidos_oponente = 0;
 
 
-    while (estado_juego(jugador_tablero) != 0 && barcos_hundidos < CANT_BARCOS){
+    while (estado_juego(jugador_tablero, barcos_hundidos_oponente) != 0){
         system("clear");
-        coordenada_t posicion_disparo;
-        coordenada_t posicion_disparo_oponente;
+        coordenada_t disparo_jugador_oponente;
+        coordenada_t disparo_oponente_jugador;
 
         imprimir_tableros(jugador_tablero, oponente_tablero);
-        pedir_jugada(&posicion_disparo.fila, &posicion_disparo.columna);
+        pedir_jugada(&disparo_jugador_oponente.fila, &disparo_jugador_oponente.columna);
 
-        coordenada_t disparo_0 = posicion_disparo;
-        disparo_0.fila--;
-        disparo_0.columna--;
-        char impacto_bala = oponente_recibe_disparo(oponente, disparo_0);
-
-        if (impacto_bala == 'A'){
-            reporte_balas.valores_categoria[1]++ ; 
-        } else if (impacto_bala == 'T') {
-            reporte_balas.valores_categoria[0]++ ;
-        } else if (impacto_bala == 'H'){
-            barcos_hundidos++;
-            reporte_balas.valores_categoria[0]++ ;
-            reporte_balas.valores_categoria[4]++ ;
-        }
-        accionar_disparo(oponente_tablero, posicion_disparo, impacto_bala);
+        char impacto_disparo = oponente_recibe_disparo(oponente, disparo_jugador_oponente);
+        accionar_disparo_jugador(oponente_tablero, disparo_jugador_oponente, impacto_disparo, &reporte_balas, &barcos_hundidos_oponente);
         
-        posicion_disparo_oponente = oponente_realiza_disparo(oponente);
-        if (jugador_tablero[posicion_disparo_oponente.fila][posicion_disparo_oponente.columna] == BARCO){
-            reporte_balas.valores_categoria[2]++ ;
-        } else {
-            reporte_balas.valores_categoria[3]++ ;
-        }
-        accionar_disparo_oponete(jugador_tablero, posicion_disparo_oponente);
+        disparo_oponente_jugador = oponente_realiza_disparo(oponente);
+        accionar_disparo_oponete(jugador_tablero, disparo_oponente_jugador, &reporte_balas);
     }
 
     for (int i = 0; i < MAX_FILAS; i++){
@@ -398,7 +480,7 @@ int main(int argc, char* argv[]){
         }
     }
 
-    FILE* archivo_reportes = fopen(argv[2], "w");
+    FILE* archivo_reportes = fopen(argv[2], ESCRITURA);
     if(!archivo_reportes){
         printf("Error en abrir el archivo de reportes");
         for (int i = 0; i < CANT_BARCOS; i++) {
@@ -417,19 +499,13 @@ int main(int argc, char* argv[]){
         return ERROR;
     }
     fclose(archivo_reportes);
-
-
     system("clear");
-    if (barcos_hundidos == CANT_BARCOS){
-        printf("================GANASTE==============\n");
-        printf("===========JUEGO TERMINADO===========\n");
-        printf("=====================================\n");
-    } else {
-        printf("==============PERDISTE==============\n");
-        printf("===========JUEGO TERMINADO===========\n");
-        printf("=====================================\n");
-    }
 
+    bool es_ganador = false;
+    if (barcos_hundidos_oponente == CANT_BARCOS){
+        es_ganador = true;
+    }
+    motrar_ganador(es_ganador);
 
     for (int i = 0; i < CANT_BARCOS; i++) {
         free(barcos_jugador[i].posiciones);
