@@ -63,7 +63,7 @@ int validar_posiciones_archivo(posicion_t posiciones[CANT_BARCOS]){
     bool posiciones_validas = true;
     int i = 0;
     while (i < CANT_BARCOS && posiciones_validas){
-        if( !(posiciones[i].fila >= 0 && posiciones[i].columna <10 )){
+        if( !(posiciones[i].fila >= 1 && posiciones[i].fila <= 10 && posiciones[i].columna >= 1 && posiciones[i].columna <= 10)){
             posiciones_validas = false;
         } 
         if( !(posiciones[i].direccion == ESTE || posiciones[i].direccion == OESTE || posiciones[i].direccion == NORTE || posiciones[i].direccion == SUR )){
@@ -85,21 +85,21 @@ int validar_posiciones_archivo(posicion_t posiciones[CANT_BARCOS]){
 
 void posicionar_largo_bar(barco_t* barco, posicion_t posicion){
     (*barco).largo = posicion.largo;
-    (*barco).posiciones[0].fila = posicion.fila;
-    (*barco).posiciones[0].columna = posicion.columna;
+    (*barco).posiciones[0].fila = posicion.fila - 1;
+    (*barco).posiciones[0].columna = posicion.columna - 1;
     for (int i = 1; i < posicion.largo; i++){
         if (posicion.direccion == ESTE){
-            (*barco).posiciones[i].fila = posicion.fila;
-            (*barco).posiciones[i].columna = posicion.columna+i;
+            (*barco).posiciones[i].fila = posicion.fila - 1;
+            (*barco).posiciones[i].columna = (posicion.columna - 1) + i;
         } else if (posicion.direccion == OESTE){
-            (*barco).posiciones[i].fila = posicion.fila;
-            (*barco).posiciones[i].columna = posicion.columna-i;
+            (*barco).posiciones[i].fila = posicion.fila - 1;
+            (*barco).posiciones[i].columna = (posicion.columna - 1) - i;
         } else if (posicion.direccion == NORTE){
-            (*barco).posiciones[i].fila = posicion.fila-i;
-            (*barco).posiciones[i].columna = posicion.columna;
+            (*barco).posiciones[i].fila = (posicion.fila - 1) - i;
+            (*barco).posiciones[i].columna = posicion.columna - 1;
         } else if (posicion.direccion == SUR){
-            (*barco).posiciones[i].fila = posicion.fila+i;
-            (*barco).posiciones[i].columna = posicion.columna;
+            (*barco).posiciones[i].fila = (posicion.fila - 1) + i;
+            (*barco).posiciones[i].columna = posicion.columna - 1;
         }
     }
 }
@@ -364,15 +364,38 @@ int main(int argc, char* argv[]){
 
         imprimir_tableros(jugador_tablero, oponente_tablero);
         pedir_jugada(&posicion_disparo.fila, &posicion_disparo.columna);
-        char impacto_bala = oponente_recibe_disparo(oponente, posicion_disparo);
 
-        if (impacto_bala == 'H'){
-            reporte_balas.valores_categoria[1] +=1 ;
+        coordenada_t disparo_0 = posicion_disparo;
+        disparo_0.fila--;
+        disparo_0.columna--;
+        char impacto_bala = oponente_recibe_disparo(oponente, disparo_0);
+
+        if (impacto_bala == 'A'){
+            reporte_balas.valores_categoria[1]++ ; 
+        } else if (impacto_bala == 'T') {
+            reporte_balas.valores_categoria[0]++ ;
+        } else if (impacto_bala == 'H'){
+            barcos_hundidos++;
+            reporte_balas.valores_categoria[0]++ ;
+            reporte_balas.valores_categoria[4]++ ;
         }
         accionar_disparo(oponente_tablero, posicion_disparo, impacto_bala);
         
         posicion_disparo_oponente = oponente_realiza_disparo(oponente);
+        if (jugador_tablero[posicion_disparo_oponente.fila][posicion_disparo_oponente.columna] == BARCO){
+            reporte_balas.valores_categoria[2]++ ;
+        } else {
+            reporte_balas.valores_categoria[3]++ ;
+        }
         accionar_disparo_oponete(jugador_tablero, posicion_disparo_oponente);
+    }
+
+    for (int i = 0; i < MAX_FILAS; i++){
+        for (int j = 0; j < MAX_COLUMNAS; j++){
+            if (jugador_tablero[i][j] == BARCO){
+                reporte_balas.valores_categoria[5]++;
+            }
+        }
     }
 
     FILE* archivo_reportes = fopen(argv[2], "w");
