@@ -163,7 +163,7 @@ int procesar_archivos(barco_t barcos_jugador[CANT_BARCOS], char* archivo_barcos 
 }
 
 void inicializar_reporte(balas_t* reporte_balas){
-    for (int i = 0; i < MAX_CATEGORIAS; i++){
+    for (int i = 0; i < MAX_VALORES; i++){
         (*reporte_balas).valores_categoria[i] = 0;
     }
 }
@@ -299,30 +299,24 @@ void accionar_disparo_oponete(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], coo
     }
 }
 
-int estado_juego(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], char oponente_tablero[MAX_FILAS][MAX_COLUMNAS]){
-    int cantidad_barcos = 0;
+int estado_juego(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS]){
     for (int i = 0; i < MAX_FILAS; i++){
         for (int j= 0; j < MAX_COLUMNAS; j++){
             if (jugador_tablero[i][j] == BARCO){
-                cantidad_barcos ++;
+                return 1;
             }
         }
-    }
-    if (cantidad_barcos == 0){
-        return -1;
     }
     return 0;
 }
 
 int procesar_reportes(FILE* archivo_reportes, balas_t reporte_balas){
-    int leidos = 0;
-    for (int i = 0; i < MAX_CATEGORIAS; i++){
-        leidos = fprintf(archivo_reportes, "%s ;%i\n", CATEGORIAS[i], reporte_balas.valores_categoria[i]);
+    for (int i = 0; i < CANT_CATEGORIAS; i++){
+        if (fprintf(archivo_reportes, "%s ;%i\n", CATEGORIAS[i], reporte_balas.valores_categoria[i]) < 0){
+            return ERROR;
+        }
     }
-    if (leidos == 6){
-        return EXITO;
-    }
-    return ERROR;
+    return EXITO;
 }
 
 int main(int argc, char* argv[]){
@@ -363,7 +357,7 @@ int main(int argc, char* argv[]){
     int barcos_hundidos = 0;
 
 
-    while (estado_juego(jugador_tablero, oponente_tablero) != 0 && barcos_hundidos < CANT_BARCOS){
+    while (estado_juego(jugador_tablero) != 0 && barcos_hundidos < CANT_BARCOS){
         system("clear");
         coordenada_t posicion_disparo;
         coordenada_t posicion_disparo_oponente;
@@ -404,11 +398,11 @@ int main(int argc, char* argv[]){
 
     system("clear");
     if (barcos_hundidos == CANT_BARCOS){
-        printf("==============PERDISTE==============\n");
+        printf("================GANASTE==============\n");
         printf("===========JUEGO TERMINADO===========\n");
         printf("=====================================\n");
     } else {
-        printf("================GANASTE==============\n");
+        printf("==============PERDISTE==============\n");
         printf("===========JUEGO TERMINADO===========\n");
         printf("=====================================\n");
     }
