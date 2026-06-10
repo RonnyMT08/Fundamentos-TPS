@@ -97,7 +97,7 @@ int validar_posiciones_archivo(posicion_t posiciones[CANT_BARCOS]){
     Postcondiciones: Guarda los valores en 'barco_jugador' de las coordenadas del barco según su largo(2,3,4,5) y direccion(ESTE, OESTE, NORTE, SUR) dados por el parametro 'posicion'.
 */
 int guardar_direccion_posicion(barco_t* barco_jugador, posicion_t posicion){
-    bool direcciones_correctas = true;
+    bool direcciones_posiciones_validas = true;
     int posicion_fila = posicion.fila -1;
     int posicion_columna = posicion.columna -1;
 
@@ -116,9 +116,13 @@ int guardar_direccion_posicion(barco_t* barco_jugador, posicion_t posicion){
             (*barco_jugador).posiciones[i].columna = posicion_columna;
         }
 
-        if ( (*barco_jugador).posiciones[i].fila < MIN_FILAS || (*barco_jugador).posiciones[i].fila > MAX_FILAS || (*barco_jugador).posiciones[i].columna < MIN_COLUMNAS || (*barco_jugador).posiciones[i].columna > MAX_COLUMNAS  ){
-            return ERROR;
+        if ( (*barco_jugador).posiciones[i].fila < 0 || (*barco_jugador).posiciones[i].fila >= MAX_FILAS || (*barco_jugador).posiciones[i].columna < 0 || (*barco_jugador).posiciones[i].columna >= MAX_COLUMNAS  ){
+            direcciones_posiciones_validas = false;
         }
+    }
+
+    if(!direcciones_posiciones_validas){
+        return ERROR;
     }
     return EXITO;
 }
@@ -150,6 +154,7 @@ int guardar_barco(posicion_t posiciones[CANT_BARCOS], barco_t barcos_jugador[CAN
 */
 int guardar_barcos_jugador(barco_t barcos_jugador[CANT_BARCOS], FILE* arch_pos_barc){
     
+    bool posiciones_barcos_validos = true;
     posicion_t posiciones[CANT_BARCOS];
     int linea = 0;
     int leidos = fscanf(arch_pos_barc, FORMATO_LECTURA_BARCOS, &posiciones[linea].fila, &posiciones[linea].columna, &posiciones[linea].direccion, &posiciones[linea].largo);
@@ -162,11 +167,15 @@ int guardar_barcos_jugador(barco_t barcos_jugador[CANT_BARCOS], FILE* arch_pos_b
     for (int i = 1; i < CANT_BARCOS; i++){
         leidos = fscanf(arch_pos_barc, FORMATO_LECTURA_BARCOS, &posiciones[i].fila, &posiciones[i].columna, &posiciones[i].direccion, &posiciones[i].largo);
     
-        if (leidos != CANT_BARCOS-1){
+        if (leidos != 4){
             printf("Error en la cantidad de barcos en el archivo de barcos.csv (se necesita 5 lineas con los barcos)\n");
             fclose(arch_pos_barc);
-            return ERROR;
+            posiciones_barcos_validos = false;
         }
+    }
+
+    if (!posiciones_barcos_validos){
+        return ERROR;
     }
 
     int archivos_validos;
@@ -365,31 +374,48 @@ void accionar_disparo_jugador(char tablero_oponente[MAX_FILAS][MAX_COLUMNAS], co
     guardar_disparo(impacto_disparo, &(*reporte_balas), &(*barcos_hundidos_oponente));
 
 }
+/*
+    Precondiciones: Los valores de 'jugador_tablero' de estar previamente inicializado, el tope debe ser concodante con la cantidad de barcos, los valores de 'fila' y 'columna' deben estar entre 1 y 10
+    Postcondiciones: Guarda en las coordendas del tablero del jugador el impacto de bala ocasionado por el oponente, el minmo puede ser AGUA, TOCADA 
+*/
+void estado_barco(barco_t barco_jugador[CANT_BARCOS], int *tope_barcos, int fila, int columna){
+    bool encontrado = false;
+    int i = 0;
+    while (i < CANT_BARCOS && !encontrado){
+        int largo = 0;
+        while (largo < MAXIMO_LARGO_BARCO && !encontrado){
+            if (barco_jugador[i].posiciones[largo].fila == fila && barco_jugador[i].posiciones[largo].columna == columna){
+                barco_jugador[i].largo--;
+                if (barco_jugador[i].largo == 0){
+                    (*tope_barcos)--;
+                }
+                encontrado = true;
+            }
+            largo++;
+        }
+        i++;
+    }
+}
+
 
 /*
     Precondiciones: Los valores de 'jugador_tablero' y 'disparo_oponente_jugador' deben estar previamente inicializados.
     Postcondiciones: Guarda en las coordendas del tablero del jugador el impacto de bala ocasionado por el oponente, el minmo puede ser AGUA, TOCADA 
 */
-void accionar_disparo_oponete(barco_t barco_jugador[CANT_BARCOS], int *tope_barcos, char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], coordenada_t disparo_oponente_jugador, balas_t* reporte_balas){
-    int fila_disparo = disparo_oponente_jugador.fila;
-    int columna_disparo = disparo_oponente_jugador.columna;
+void accionar_disparo_oponente(barco_t barco_jugador[CANT_BARCOS], int *tope_barcos, char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], coordenada_t disparo_oponente_jugador, balas_t* reporte_balas){
+    int fila = disparo_oponente_jugador.fila;
+    int columna = disparo_oponente_jugador.columna;
 
-    for (int i = 0; i < (*tope_barcos); i++){
-        for (int l = 0; l < barco_jugador[i].largo; l++){
-            if( barco_jugador[i].posiciones[l].fila == fila_disparo && barco_jugador[i].posiciones[l].columna == columna_disparo){
-                jugador_tablero[fila_disparo][columna_disparo] = TOCADO;
-                (*reporte_balas).valores_categoria[2]++ ;
-                barco_jugador[i].largo --;
-                if (barco_jugador[i].largo == 0){
-                    (*tope_barcos) --;
-                }
-
-                
-            } else {
-                jugador_tablero[fila_disparo][columna_disparo] = AGUA;
-                (*reporte_balas).valores_categoria[3]++ ;
-            }
+    if (jugador_tablero[fila][columna] != BARCO){
+        if (jugador_tablero[fila][columna] != TOCADO){
+            jugador_tablero[fila][columna] = AGUA;
         }
+        (*reporte_balas).valores_categoria[3]++;
+    } else {
+        jugador_tablero[fila][columna] = TOCADO;
+        (*reporte_balas).valores_categoria[2]++;
+
+        estado_barco(barco_jugador, &(*tope_barcos), fila, columna);
     }
 }
 
@@ -491,7 +517,7 @@ int main(int argc, char* argv[]){
         accionar_disparo_jugador(oponente_tablero, disparo_jugador_oponente, impacto_disparo, &reporte_balas, &barcos_hundidos_oponente);
         
         disparo_oponente_jugador = oponente_realiza_disparo(oponente);
-        accionar_disparo_oponete(barcos_jugador, &tope_barcos, jugador_tablero, disparo_oponente_jugador, &reporte_balas);
+        accionar_disparo_oponente(barcos_jugador, &tope_barcos, jugador_tablero, disparo_oponente_jugador, &reporte_balas);
     }
     
     reporte_balas.valores_categoria[5] = tope_barcos;
