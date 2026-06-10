@@ -25,7 +25,7 @@
 #define LECTURA "r"
 #define ESCRITURA "w"
 #define FORMATO_LECTURA_BARCOS "%i;%i;%c;%i"
-#define FORMATO_ESCRITURA_REPORTES "%s :%i\n"
+#define FORMATO_ESCRITURA_REPORTES "%s: %i\n"
 
 const int CANT_ARGS_MIN = 2;
 const int CANT_ARGS_MAX = 3;
@@ -53,6 +53,8 @@ const char SUR = 'S';
 const int ESTADO_JUGANDO = -1;
 const int ESTADO_TERMINADO = 0;
 
+const int LARGOS_ESPERADOS[CANT_BARCOS] = {2, 3, 3, 4, 5};
+
 const char CATEGORIAS[CANT_CATEGORIAS][MAX_CATEGORIAS] = {"Balas aliadas acertadas", "Balas aliadas erradas", "Balas enemigas acertadas", "Balas enemigas erradas", "Barcos enemigos hundidos", "Barcos aliados sobrevivientes"};
 
 typedef struct posiciones {
@@ -67,11 +69,36 @@ typedef struct balas {
 } balas_t;
 
 /* 
+    Precondiciones: -
+    Postcondiciones: Verifica si el largo de los barcos coincide con los 'LARGOS_ESPERADOS', devuelve true si es asi, false en caso contrario.
+*/ 
+bool validar_largo_barcos(int largos_obtenidos[CANT_BARCOS]){
+    bool largos_validos = true;
+    for (int i = 0; i < CANT_BARCOS; i++){
+        
+        for (int j = 0; j < CANT_BARCOS - 1 - i; j++){
+            if (largos_obtenidos[j] > largos_obtenidos[j + 1]){
+                int auxiliar = largos_obtenidos[j];
+                largos_obtenidos[j] = largos_obtenidos[j + 1];
+                largos_obtenidos[j + 1] = auxiliar;
+            }
+        }
+    }
+    for (int i = 0; i < CANT_BARCOS; i++){
+        if (largos_obtenidos[i] != LARGOS_ESPERADOS[i]){
+            largos_validos = false;
+        }
+    }
+    return largos_validos;
+}
+
+/* 
     Precondiciones: Los valores de 'posiciones' deben estar inicializados.
     Postcondiciones: Verifica que los datos de los barcos obtenidos del archivo 'barcos.csv'
         devuelve EXITO si los datos son correctos. ERROR si algun dato de barco esta escrito de manera erronea.
 */ 
 int validar_posiciones_archivo(posicion_t posiciones[CANT_BARCOS]){
+    int largos_obtenidos[CANT_BARCOS];
     bool posiciones_validas = true;
     int i = 0;
     while (i < CANT_BARCOS && posiciones_validas){
@@ -84,9 +111,11 @@ int validar_posiciones_archivo(posicion_t posiciones[CANT_BARCOS]){
         if( !(posiciones[i].largo >= MIN_LARGO_BARCO && posiciones[i].largo <= MAX_LARGO_BARCO)){
             posiciones_validas = false;
         }
+        largos_obtenidos[i] = posiciones[i].largo;
         i++;
     }
-    if (!posiciones_validas){
+
+    if (!posiciones_validas || !validar_largo_barcos(largos_obtenidos)){
         return ERROR;
     }
     return EXITO;
@@ -516,8 +545,10 @@ int main(int argc, char* argv[]){
         char impacto_disparo = oponente_recibe_disparo(oponente, disparo_jugador_oponente);
         accionar_disparo_jugador(oponente_tablero, disparo_jugador_oponente, impacto_disparo, &reporte_balas, &barcos_hundidos_oponente);
         
-        disparo_oponente_jugador = oponente_realiza_disparo(oponente);
-        accionar_disparo_oponente(barcos_jugador, &tope_barcos, jugador_tablero, disparo_oponente_jugador, &reporte_balas);
+        if (barcos_hundidos_oponente < CANT_BARCOS){
+            disparo_oponente_jugador = oponente_realiza_disparo(oponente);
+            accionar_disparo_oponente(barcos_jugador, &tope_barcos, jugador_tablero, disparo_oponente_jugador, &reporte_balas);
+        }
     }
     
     reporte_balas.valores_categoria[5] = tope_barcos;
