@@ -96,7 +96,8 @@ int validar_posiciones_archivo(posicion_t posiciones[CANT_BARCOS]){
     Precondiciones: los valores de 'posicion' deben estar inicialzados.
     Postcondiciones: Guarda los valores en 'barco_jugador' de las coordenadas del barco según su largo(2,3,4,5) y direccion(ESTE, OESTE, NORTE, SUR) dados por el parametro 'posicion'.
 */
-void guardar_direccion_posicion(barco_t* barco_jugador, posicion_t posicion){
+int guardar_direccion_posicion(barco_t* barco_jugador, posicion_t posicion){
+    bool direcciones_correctas = true;
     int posicion_fila = posicion.fila -1;
     int posicion_columna = posicion.columna -1;
 
@@ -114,20 +115,33 @@ void guardar_direccion_posicion(barco_t* barco_jugador, posicion_t posicion){
             (*barco_jugador).posiciones[i].fila = (posicion_fila) + i;
             (*barco_jugador).posiciones[i].columna = posicion_columna;
         }
+
+        if ( (*barco_jugador).posiciones[i].fila < MIN_FILAS || (*barco_jugador).posiciones[i].fila > MAX_FILAS || (*barco_jugador).posiciones[i].columna < MIN_COLUMNAS || (*barco_jugador).posiciones[i].columna > MAX_COLUMNAS  ){
+            return ERROR;
+        }
     }
+    return EXITO;
 }
 
 /*
     Precondiciones: Los valores de 'posiciones' deben estar inicializados.
     Postcondiciones: Guarda los valores en 'barco_jugador' de las coordenadas de cada barco dada por el parametro 'posicion' con la primera coordenada(fila,columna), largo(2,3,4,5) y dirección(ESTE, OESTE, NORTE, SUR).
 */
-void guardar_barco(posicion_t posiciones[CANT_BARCOS], barco_t barcos_jugador[CANT_BARCOS]){
+int guardar_barco(posicion_t posiciones[CANT_BARCOS], barco_t barcos_jugador[CANT_BARCOS]){
+    bool barco_guardado = true;
     for (int i = 0; i < CANT_BARCOS; i++){
         barcos_jugador[i].largo = posiciones[i].largo;
         barcos_jugador[i].posiciones[0].fila = posiciones[i].fila - 1;
         barcos_jugador[i].posiciones[0].columna = posiciones[i].columna - 1;
-        guardar_direccion_posicion(&barcos_jugador[i], posiciones[i]);
+        int guardar = guardar_direccion_posicion(&barcos_jugador[i], posiciones[i]);
+        if (guardar == ERROR){
+            barco_guardado = false;
+        }
     }
+    if (!barco_guardado){
+        return ERROR;
+    }
+    return EXITO;
 }
 
 /*
@@ -162,7 +176,10 @@ int guardar_barcos_jugador(barco_t barcos_jugador[CANT_BARCOS], FILE* arch_pos_b
         return ERROR;
     }
 
-    guardar_barco(posiciones, barcos_jugador);
+    int barcos_guardados = guardar_barco(posiciones, barcos_jugador);
+    if (barcos_guardados == ERROR){
+        return ERROR;
+    }
     return EXITO;
 }
 
@@ -353,25 +370,26 @@ void accionar_disparo_jugador(char tablero_oponente[MAX_FILAS][MAX_COLUMNAS], co
     Precondiciones: Los valores de 'jugador_tablero' y 'disparo_oponente_jugador' deben estar previamente inicializados.
     Postcondiciones: Guarda en las coordendas del tablero del jugador el impacto de bala ocasionado por el oponente, el minmo puede ser AGUA, TOCADA 
 */
-void accionar_disparo_oponete(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], coordenada_t disparo_oponente_jugador, balas_t* reporte_balas){
+void accionar_disparo_oponete(barco_t barco_jugador[CANT_BARCOS], int *tope_barcos, char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], coordenada_t disparo_oponente_jugador, balas_t* reporte_balas){
     int fila_disparo = disparo_oponente_jugador.fila;
     int columna_disparo = disparo_oponente_jugador.columna;
 
-    for (int i = 0; i < MAX_FILAS; i++ ){
-        for(int j = 0; j < MAX_COLUMNAS; j++){
-            if (fila_disparo == i && columna_disparo == j){
-                if ( jugador_tablero[i][j] == BARCO){
-                    jugador_tablero[i][j] = TOCADO;
-                } else if(jugador_tablero[i][j] == VACIO){
-                    jugador_tablero[i][j] = AGUA;
+    for (int i = 0; i < (*tope_barcos); i++){
+        for (int l = 0; l < barco_jugador[i].largo; l++){
+            if( barco_jugador[i].posiciones[l].fila == fila_disparo && barco_jugador[i].posiciones[l].columna == columna_disparo){
+                jugador_tablero[fila_disparo][columna_disparo] = TOCADO;
+                (*reporte_balas).valores_categoria[2]++ ;
+                barco_jugador[i].largo --;
+                if (barco_jugador[i].largo == 0){
+                    (*tope_barcos) --;
                 }
+
+                
+            } else {
+                jugador_tablero[fila_disparo][columna_disparo] = AGUA;
+                (*reporte_balas).valores_categoria[3]++ ;
             }
         }
-    }
-    if (jugador_tablero[disparo_oponente_jugador.fila][disparo_oponente_jugador.columna] == BARCO){
-        (*reporte_balas).valores_categoria[2]++ ;
-    } else {
-        (*reporte_balas).valores_categoria[3]++ ;
     }
 }
 
@@ -458,6 +476,7 @@ int main(int argc, char* argv[]){
     inicializar_tableros(jugador_tablero, oponente_tablero);
     posicionar_barcos(jugador_tablero, barcos_jugador);
     int barcos_hundidos_oponente = 0;
+    int tope_barcos = 5;
 
 
     while (estado_juego(jugador_tablero, barcos_hundidos_oponente) != 0){
@@ -472,16 +491,10 @@ int main(int argc, char* argv[]){
         accionar_disparo_jugador(oponente_tablero, disparo_jugador_oponente, impacto_disparo, &reporte_balas, &barcos_hundidos_oponente);
         
         disparo_oponente_jugador = oponente_realiza_disparo(oponente);
-        accionar_disparo_oponete(jugador_tablero, disparo_oponente_jugador, &reporte_balas);
+        accionar_disparo_oponete(barcos_jugador, &tope_barcos, jugador_tablero, disparo_oponente_jugador, &reporte_balas);
     }
-
-    for (int i = 0; i < MAX_FILAS; i++){
-        for (int j = 0; j < MAX_COLUMNAS; j++){
-            if (jugador_tablero[i][j] == BARCO){
-                reporte_balas.valores_categoria[5]++;
-            }
-        }
-    }
+    
+    reporte_balas.valores_categoria[5] = tope_barcos;
 
     FILE* archivo_reportes = fopen(argv[2], ESCRITURA);
     if(!archivo_reportes){
