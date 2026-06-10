@@ -312,7 +312,7 @@ void imprimir_tablero_oponente(char oponente_tablero[MAX_FILAS][MAX_COLUMNAS]){
 
 /*
     Precondiciones: -
-    Postcondiciones: Pide y carga en 'fila_diaparo' y 'columna_disparo' los valores que ingresa el jugador, los mismos deben estar entre 1 y 10.
+    Postcondiciones: Pide y carga en 'fila_diaparo' y 'columna_disparo' los valores que ingresa el jugador, los mismos deben estar entre 0 y 9.
 */
 void pedir_jugada( int* fila_disparo, int* columna_disparo){
     int fila = 0;
@@ -376,7 +376,7 @@ void accionar_disparo_jugador(char tablero_oponente[MAX_FILAS][MAX_COLUMNAS], co
 }
 /*
     Precondiciones: Los valores de 'jugador_tablero' de estar previamente inicializado, el tope debe ser concodante con la cantidad de barcos, los valores de 'fila' y 'columna' deben estar entre 1 y 10
-    Postcondiciones: Guarda en las coordendas del tablero del jugador el impacto de bala ocasionado por el oponente, el minmo puede ser AGUA, TOCADA 
+    Postcondiciones: Actualiza el 'tope_barcos' restandolo en una unidad si la 'fila' y 'columna' coincide con la utlima posicion del barco. 
 */
 void estado_barco(barco_t barco_jugador[CANT_BARCOS], int *tope_barcos, int fila, int columna){
     bool encontrado = false;
