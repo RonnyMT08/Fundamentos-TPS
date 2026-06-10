@@ -92,11 +92,6 @@ bool validar_largo_barcos(int largos_obtenidos[CANT_BARCOS]){
     return largos_validos;
 }
 
-/* 
-    Precondiciones: Los valores de 'posiciones' deben estar inicializados.
-    Postcondiciones: Verifica que los datos de los barcos obtenidos del archivo 'barcos.csv'
-        devuelve EXITO si los datos son correctos. ERROR si algun dato de barco esta escrito de manera erronea.
-*/ 
 int validar_posiciones_archivo(posicion_t posiciones[CANT_BARCOS]){
     int largos_obtenidos[CANT_BARCOS];
     bool posiciones_validas = true;
@@ -118,10 +113,11 @@ int validar_posiciones_archivo(posicion_t posiciones[CANT_BARCOS]){
     if (!posiciones_validas || !validar_largo_barcos(largos_obtenidos)){
         return ERROR;
     }
+
     return EXITO;
 }
 
-/* 
+/*
     Precondiciones: los valores de 'posicion' deben estar inicialzados.
     Postcondiciones: Guarda los valores en 'barco_jugador' de las coordenadas del barco según su largo(2,3,4,5) y direccion(ESTE, OESTE, NORTE, SUR) dados por el parametro 'posicion'.
 */
@@ -169,6 +165,10 @@ int guardar_barco(posicion_t posiciones[CANT_BARCOS], barco_t barcos_jugador[CAN
         int guardar = guardar_direccion_posicion(&barcos_jugador[i], posiciones[i]);
         if (guardar == ERROR){
             barco_guardado = false;
+        }
+        for (int j = posiciones[i].largo; j < MAXIMO_LARGO_BARCO; j++){
+            barcos_jugador[i].posiciones[j].fila = -1;
+            barcos_jugador[i].posiciones[j].columna = -1;
         }
     }
     if (!barco_guardado){
@@ -268,16 +268,24 @@ void inicializar_tableros(char tablero_jugador[MAX_FILAS][MAX_COLUMNAS], char ta
     Precondiciones: Los valores de 'barco_jugador' deben estar inicializadados.
     Postcondiciones: Carga todas las coordenadas de los BARCOS dados por 'barco_jugador' en el 'jugador_tablero' segun la coordenada(fila, columna) correspondiente.
 */
-void posicionar_barcos(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], barco_t barco_jugador[CANT_BARCOS]){
+int posicionar_barcos(char jugador_tablero[MAX_FILAS][MAX_COLUMNAS], barco_t barco_jugador[CANT_BARCOS]){
+    bool sin_superposicion = true;
     for (int barco = 0; barco < CANT_BARCOS; barco++){
-        for (int largo = 0; largo < barco_jugador[barco].largo; largo++){
-            int fila = barco_jugador[barco].posiciones[largo].fila;
-            int columna = barco_jugador[barco].posiciones[largo].columna;
+        for (int l = 0; l < barco_jugador[barco].largo; l++){
+            int fila = barco_jugador[barco].posiciones[l].fila;
+            int columna = barco_jugador[barco].posiciones[l].columna;
             if (fila >= 0 && fila < MAX_FILAS && columna >= 0 && columna < MAX_COLUMNAS){
+                if (jugador_tablero[fila][columna] == BARCO){
+                    sin_superposicion = false;
+                }
                 jugador_tablero[fila][columna] = BARCO;
             }
         }
     }
+    if (!sin_superposicion){
+        return ERROR;
+    }
+    return EXITO;
 }
 
 /*
@@ -341,7 +349,7 @@ void imprimir_tablero_oponente(char oponente_tablero[MAX_FILAS][MAX_COLUMNAS]){
 
 /*
     Precondiciones: -
-    Postcondiciones: Pide y carga en 'fila_diaparo' y 'columna_disparo' los valores que ingresa el jugador, los mismos deben estar entre 0 y 9.
+    Postcondiciones: Pide y carga en 'fila_diaparo' y 'columna_disparo' los valores que ingresa el jugador, los mismos deben estar entre 1 y 10.
 */
 void pedir_jugada( int* fila_disparo, int* columna_disparo){
     int fila = 0;
@@ -405,7 +413,7 @@ void accionar_disparo_jugador(char tablero_oponente[MAX_FILAS][MAX_COLUMNAS], co
 }
 /*
     Precondiciones: Los valores de 'jugador_tablero' de estar previamente inicializado, el tope debe ser concodante con la cantidad de barcos, los valores de 'fila' y 'columna' deben estar entre 1 y 10
-    Postcondiciones: Actualiza el 'tope_barcos' restandolo en una unidad si la 'fila' y 'columna' coincide con la utlima posicion del barco. 
+    Postcondiciones: Actualiza el 'tope_barcos' restandolo en una unidad si la 'fila' y 'columna' coincide con la posicion del barco. 
 */
 void estado_barco(barco_t barco_jugador[CANT_BARCOS], int *tope_barcos, int fila, int columna){
     bool encontrado = false;
@@ -529,7 +537,14 @@ int main(int argc, char* argv[]){
     balas_t reporte_balas;
     inicializar_reporte(&reporte_balas);
     inicializar_tableros(jugador_tablero, oponente_tablero);
-    posicionar_barcos(jugador_tablero, barcos_jugador);
+    if (posicionar_barcos(jugador_tablero, barcos_jugador) != EXITO){
+        printf("Error: superposicion de barcos en el archivo\n");
+        for (int i = 0; i < CANT_BARCOS; i++) {
+            free(barcos_jugador[i].posiciones);
+        }
+        oponente_destruir(oponente);
+        return ERROR;
+    }
     int barcos_hundidos_oponente = 0;
     int tope_barcos = 5;
 
