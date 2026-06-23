@@ -94,7 +94,7 @@ void liberar_espacio_barcos(barco_t barcos_jugador[CANT_BARCOS], int num_barco){
     Precondiciones: 'barcos_jugador' debe estar inicializado, 'num_barco' debe ser >= 0.
     Postcondiciones:  Devuelve 'true' si se reserva memoria dinamica para las coordenadas del barco. False en caso contrario
 */
-bool reservar_espacio(barco_t barcos_jugador[CANT_BARCOS], int num_barco){
+bool reservar_posiciones_barco(barco_t barcos_jugador[CANT_BARCOS], int num_barco){
     bool reservado = true;
     barcos_jugador[num_barco].posiciones = malloc(sizeof(coordenada_t) * MAXIMO_LARGO_BARCO);
     if (!barcos_jugador[num_barco].posiciones){
@@ -199,6 +199,12 @@ bool es_largo(int largo_dado ){
     return (largo_dado >= MIN_LARGO_BARCO && largo_dado <= MAX_LARGO_BARCO);
 }
 
+bool datos_archivo_barcos_validos(int posicion_fila_inicial_barco, int posicion_columna_inicial_barco, char direccion_barco, int largo_barco ){
+    return ((posicion_fila_inicial_barco >= MIN_FILAS) && (posicion_columna_inicial_barco <= MAX_FILAS) && 
+            (posicion_columna_inicial_barco >= MAX_COL));
+}
+
+
 /*
     Precondiciones: Los valores de 'datos_archivo' deben estar inicializados.
     Postcondiciones: Devuelve 'true' si cada una de las coordenadas de las posiciones de los barcos no se encuentran superpuestas. False en caso contrario.
@@ -285,21 +291,51 @@ int guardar_barco(datos_t posiciones[CANT_BARCOS], barco_t barcos_jugador[CANT_B
 
 
 PROLEMMMASSSSS-----------------
-    Precondiciones: El archivo 'arch_pos_barc' debe estar abierto en modo LECTURA.
+    Precondiciones: El archivo 'archivo_barcos_jugador' debe estar abierto en modo LECTURA.
     Postcondiciones: Guarda en 'barcos_jugador' todas las posiciones de los barcos recibidos por en el 'archivo_pos_barcos'. Devuelve EXITO si se guardo correctamente las posiciones, ERROR en caso contrario
 */
-int guardar_barcos_jugador(barco_t barcos_jugador[CANT_BARCOS], FILE* arch_pos_barc){    
-    datos_t datos_archivo[CANT_BARCOS];    
+int guardar_barcos_jugador(barco_t barcos_jugador[CANT_BARCOS], FILE* archivo_barcos_jugador){    
+    //datos_t datos_archivo[CANT_BARCOS];    
     int i = 0;
     bool espacios_reservados = true;
-    int leidos = fscanf(arch_pos_barc, FORMATO_LECTURA_BARCOS, &datos_archivo[i].fila, &datos_archivo[i].columna, &datos_archivo[i].direccion, &datos_archivo[i].largo);
+    bool barco_valido = true;
+    
+    int posicion_fila_inicial_barco = -1;
+    int posicion_columna_inicial_barco = -1;
+    char direccion_barco = "";
+    int largo_barco = -1;
+
+    int leidos = fscanf(archivo_barcos_jugador, FORMATO_LECTURA_BARCOS, &posicion_fila_inicial_barco, &posicion_columna_inicial_barco, &direccion_barco, &largo_barco);
+    
+    while (!EOF && espacios_reservados &&  barco_valido){
+        
+        //valida que sean enteros, char, largo permitido
+        if(!datos_archivo_barcos_validos(posicion_fila_inicial_barco, posicion_columna_inicial_barco, direccion_barco, largo_barco )){
+            barco_valido = false;
+        }
+
+        // valida que 
+        if(validar_posiciones_archivo)
+
+        //reseva posiciones
+        if (!reservar_posiciones_barco(largo_barco)){
+            espacios_reservados = false;
+        }
+        
+        //carga barcos en el struc
+
+
+    }
+    
+    
+    
     while (i < CANT_BARCOS && espacios_reservados && leidos == 4){
-        if (!reservar_espacio(barcos_jugador, i)){
+        if (!reservar_posiciones_barco(barcos_jugador, i)){
             espacios_reservados = false;
         }
         i++;
         if (i < CANT_BARCOS){
-            leidos = fscanf(arch_pos_barc, FORMATO_LECTURA_BARCOS, &datos_archivo[i].fila, &datos_archivo[i].columna, &datos_archivo[i].direccion, &datos_archivo[i].largo);
+            leidos = fscanf(archivo_barcos_jugador, FORMATO_LECTURA_BARCOS, &datos_archivo[i].fila, &datos_archivo[i].columna, &datos_archivo[i].direccion, &datos_archivo[i].largo);
         }
     }
     if (!espacios_reservados){

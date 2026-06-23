@@ -1,0 +1,9 @@
+services:
+  entorno_fundamentos:
+    build: .
+    container_name: entorno_fundamentos
+    volumes:
+      - .:/usr/src/fundamentostps
+    working_dir: /usr/src/fundamentostps
+    command: tail -f /dev/null
+
