@@ -281,6 +281,10 @@ int guardar_barco(datos_t posiciones[CANT_BARCOS], barco_t barcos_jugador[CANT_B
 }
 
 /*
+
+
+
+PROLEMMMASSSSS-----------------
     Precondiciones: El archivo 'arch_pos_barc' debe estar abierto en modo LECTURA.
     Postcondiciones: Guarda en 'barcos_jugador' todas las posiciones de los barcos recibidos por en el 'archivo_pos_barcos'. Devuelve EXITO si se guardo correctamente las posiciones, ERROR en caso contrario
 */
@@ -324,7 +328,7 @@ int guardar_barcos_jugador(barco_t barcos_jugador[CANT_BARCOS], FILE* arch_pos_b
     Precondiciones: -
     Postcondiciones: Abre en modo lectura el 'archivo_barcos', guarda los datos en 'barcos_jugador', Devuelve ERROR_APERTURA si no se pudo abrir el archivo, ERROR si no se pudo guardar los barcos. EXITO en caso contrario. 
 */
-int procesar_archivos(barco_t barcos_jugador[CANT_BARCOS], char* archivo_barcos ){
+int procesar_archivo_barcos(barco_t barcos_jugador[CANT_BARCOS], char* archivo_barcos ){
     FILE* arch_pos_barc = fopen(archivo_barcos, LECTURA);
     if (!arch_pos_barc){
         printf("Error al abrir el archivo de posiciones de los barcos(posiblemente no exista)\n");
@@ -629,7 +633,7 @@ int main(int argc, char* argv[]){
         return ERROR_ARGS;
     }
     
-    if (procesar_archivos(barcos_jugador, argv[POS_ARCH_BARCOS]) != 0){
+    if (procesar_archivo_barcos(barcos_jugador, argv[POS_ARCH_BARCOS]) != 0){
         liberar_espacio_barcos(barcos_jugador, CANT_BARCOS);
         return ERROR;
     }
