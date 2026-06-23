@@ -1,0 +1,17 @@
+
+(hecho)    Los comentarios en los #include no son necesarios
+
+(hecho)    En es_posicion_camino  no es necesario que el incremento del iterador esté dentro del else. La condición del while ya contempla el corte cuando se encuentra el elemento, por lo que el i++ puede ubicarse directamente fuera del if.
+
+(hecho)    Las funciones es_posicion_pergamino, es_posicion_altar, es_posicion_runa y es_posicion_homero repiten exactamente la misma lógica de comparación de coordenadas, por lo que sería conveniente unificarlas en una única función general y reutilizarla en los distintos casos.
+
+(hecho)    En la misma línea, es_posicion_herramienta y es_posicion_obstaculos recorren estructuras similares, por lo que también podrían unificarse en una función más genérica para evitar duplicación de código.
+
+    Quedan algunas constantes “hardcodeadas” que podrían definirse para mejorar la mantenibilidad.
+
+    La función dirigir_movimiento es bastante extensa y con varias responsabilidades, por lo que sería recomendable dividirla en funciones más pequeñas.
+
+    En busca_indic_posicion_objeto la variable debería inicializarse con un valor inválido (por ejemplo -1), ya que actualmente la verificación posterior de “mayor o igual a 0” siempre se cumple, lo que puede llevar a comportamientos incorrectos.
+
+
+
