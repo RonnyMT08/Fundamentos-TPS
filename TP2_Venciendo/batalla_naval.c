@@ -40,6 +40,7 @@ const int ERROR_ARGS = 4;
 
 const int MIN_LARGO_BARCO = 1;
 const int MAX_LARGO_BARCO = 5;
+const int CANT_MAX_BARCOS = 4;
 
 const char BARCO = 'B';
 const char TOCADO = 'T';
@@ -68,13 +69,6 @@ const char* MSJ_PERDISTE = "==============PERDISTE==============";
 const char* MSJ_JUEGO_TERMINADO = "===========JUEGO TERMINADO===========";
 const char* MSJ_DECORADOR = "=====================================";
 
-typedef struct datos {
-    int fila;
-    int columna; 
-    char direccion;
-    int largo;
-} datos_t;
-
 typedef struct balas {
     int valores_categoria[MAX_VALORES];
 } balas_t;
@@ -91,15 +85,15 @@ void liberar_espacio_barcos(barco_t barcos_jugador[CANT_BARCOS], int num_barco){
 }
 
 /*
-    Precondiciones: 'barcos_jugador' debe estar inicializado, 'num_barco' debe ser >= 0.
+    Precondiciones: 'barcos_jugador' debe estar inicializado, 'largo_barco' debe ser >= 0.
     Postcondiciones:  Devuelve 'true' si se reserva memoria dinamica para las coordenadas del barco. False en caso contrario
 */
-bool reservar_posiciones_barco(barco_t barcos_jugador[CANT_BARCOS], int num_barco){
+bool reservar_posiciones_barco(barco_t* barcos_jugador, int largo_barco){
     bool reservado = true;
-    barcos_jugador[num_barco].posiciones = malloc(sizeof(coordenada_t) * MAXIMO_LARGO_BARCO);
-    if (!barcos_jugador[num_barco].posiciones){
-        printf("Error al reservar memoria para las posiciones(coordenadas) de los barcos\n");
-        liberar_espacio_barcos(barcos_jugador, num_barco);
+
+    (*barcos_jugador).posiciones = malloc(sizeof(coordenada_t) * (size_t)largo_barco);
+    if (!(*barcos_jugador).posiciones){
+        printf("Error al reservar memoria para las posiciones(coordenadas) del barco con largo %i\n", largo_barco);
         reservado = false;
         }
     return reservado;
@@ -128,26 +122,36 @@ void calcular_desplazamiento(int fila_dada, int columna_dada, char direccion, in
     Precondiciones: los valores de 'datos_archivo' deben estar inicializados.
     Postcondiciones: Devuelve 'true' si no existe superposicion en las posiciones de los 5 barcos. False en caso contrario.
 */
-bool validar_superposicion(datos_t datos_archivo[CANT_BARCOS]){
+bool validar_superposiciones_barcos(barco_t barcos_jugador[CANT_BARCOS], int indice_barco){
     bool sin_superposicion = true;
-    int filas[CANT_BARCOS * MAXIMO_LARGO_BARCO];
-    int columnas[CANT_BARCOS * MAXIMO_LARGO_BARCO];
-    int celdas_totales = 0;
+    int filas[20] = {0};
+    int columnas[20] = {0};
+    int tope = 0;
+    // coordenada 
+    // tope = 4
+    // fila     1 1 1 1
+    // columna  1 2 3 4
 
-    for (int i = 0; i < CANT_BARCOS; i++){
-        for (int desplazamiento = 0; desplazamiento < datos_archivo[i].largo; desplazamiento++){
-            calcular_desplazamiento(datos_archivo[i].fila, datos_archivo[i].columna, datos_archivo[i].direccion, desplazamiento, &filas[celdas_totales], &columnas[celdas_totales]);
-            celdas_totales++;
+    // fila     1 2 3 4
+    // columna  1 1 1 1
+
+    for (int barco = 0; barco < indice_barco; barco++){
+        int largo_barco = barcos_jugador[barco].largo;
+
+        for (int posicion = tope; posicion < largo_barco; posicion++){
+            filas[posicion] = barcos_jugador[indice_barco].posiciones[posicion].fila;  
+            columnas[posicion] = barcos_jugador[indice_barco].posiciones[posicion].columna; 
+        }
+        tope += largo_barco;
+    }
+
+    int i = 0;
+    while ( i < tope-1 && sin_superposicion){
+        if (filas[i] == filas[i+1] && columnas[i] == columnas[i+1]){
+            sin_superposicion = false;
         }
     }
 
-    for (int celda1 = 0; celda1 < celdas_totales; celda1++){
-        for (int celda2 = celda1 + 1; celda2 < celdas_totales; celda2++){
-            if (filas[celda1] == filas[celda2] && columnas[celda1] == columnas[celda2]){
-                sin_superposicion = false;
-            }
-        }
-    }
     return sin_superposicion;
 }
 
@@ -199,161 +203,70 @@ bool es_largo(int largo_dado ){
     return (largo_dado >= MIN_LARGO_BARCO && largo_dado <= MAX_LARGO_BARCO);
 }
 
+/*
+    Precondiciones: -
+    Postcondiciones: Devuelve 'true' si los datos 'posicion_fila', 'posicion_columna', 'direccion, 'largo', dados son permitidos o pueden formar parte de un barco. 
+*/
 bool datos_archivo_barcos_validos(int posicion_fila_inicial_barco, int posicion_columna_inicial_barco, char direccion_barco, int largo_barco ){
-    return ((posicion_fila_inicial_barco >= MIN_FILAS) && (posicion_columna_inicial_barco <= MAX_FILAS) && 
-            (posicion_columna_inicial_barco >= MAX_COL));
+    return (es_posicion(posicion_fila_inicial_barco, posicion_columna_inicial_barco) && es_direccion(direccion_barco) && es_largo(largo_barco));
 }
 
 
 /*
-    Precondiciones: Los valores de 'datos_archivo' deben estar inicializados.
-    Postcondiciones: Devuelve 'true' si cada una de las coordenadas de las posiciones de los barcos no se encuentran superpuestas. False en caso contrario.
-*/ 
-bool validar_posiciones_archivo(datos_t datos_archivo[CANT_BARCOS]){
-    int largos_obtenidos[CANT_BARCOS];
-    bool posiciones_validas = true;
-    int i = 0;
-    while (i < CANT_BARCOS && posiciones_validas){
-        if( ! es_posicion(datos_archivo[i].fila, datos_archivo[i].columna)){
-            posiciones_validas = false;
-        } 
-        if( ! es_direccion(datos_archivo[i].direccion)){
-            posiciones_validas = false;
-        }
-        if( ! es_largo(datos_archivo[i].largo)){
-            posiciones_validas = false;
-        }
-        largos_obtenidos[i] = datos_archivo[i].largo;
-        i++;
-    }
-
-    if (!validar_largo_barcos(largos_obtenidos)){
-        posiciones_validas = false;
-    }
-
-    if (!validar_superposicion(datos_archivo)){
-        posiciones_validas = false;
-    }
-
-    return posiciones_validas;
-}
-
-/*
-    Precondiciones: los valores de 'posicion' deben estar inicialzados.
-    Postcondiciones: Guarda los valores en 'barco_jugador' de las coordenadas del barco según su largo(2,3,4,5) y direccion(ESTE, OESTE, NORTE, SUR) dados por el parametro 'posicion'.
-*/
-int guardar_direccion_posicion(barco_t* barco_jugador, datos_t posicion){
-    bool direcciones_posiciones_validas = true;
-    int posicion_fila = posicion.fila -1;
-    int posicion_columna = posicion.columna -1;
-
-    for (int i = 1; i < posicion.largo; i++){
-        calcular_desplazamiento(posicion_fila, posicion_columna, posicion.direccion, i, &(*barco_jugador).posiciones[i].fila, &(*barco_jugador).posiciones[i].columna);
-
-        if ( !es_posicion((*barco_jugador).posiciones[i].fila + 1, (*barco_jugador).posiciones[i].columna + 1)){
-            direcciones_posiciones_validas = false;
-        }
-    }
-
-    if(! direcciones_posiciones_validas){
-        return ERROR;
-    }
-    return EXITO;
-}
-
-/*
-    Precondiciones: Los valores de 'posiciones' deben estar inicializados.
-    Postcondiciones: Guarda los valores en 'barco_jugador' de las coordenadas de cada barco dada por el parametro 'posicion' con la primera coordenada(fila,columna), largo(2,3,4,5) y dirección(ESTE, OESTE, NORTE, SUR).
-*/
-int guardar_barco(datos_t posiciones[CANT_BARCOS], barco_t barcos_jugador[CANT_BARCOS]){
-    bool barco_guardado = true;
-    for (int i = 0; i < CANT_BARCOS; i++){
-        barcos_jugador[i].largo = posiciones[i].largo;
-        barcos_jugador[i].posiciones[0].fila = posiciones[i].fila - 1;
-        barcos_jugador[i].posiciones[0].columna = posiciones[i].columna - 1;
-        int guardar = guardar_direccion_posicion(&barcos_jugador[i], posiciones[i]);
-        if (guardar == ERROR){
-            barco_guardado = false;
-        }
-        for (int j = posiciones[i].largo; j < MAXIMO_LARGO_BARCO; j++){
-            barcos_jugador[i].posiciones[j].fila = -1;
-            barcos_jugador[i].posiciones[j].columna = -1;
-        }
-    }
-    if (!barco_guardado){
-        return ERROR;
-    }
-    return EXITO;
-}
-
-/*
-
-
-
-PROLEMMMASSSSS-----------------
     Precondiciones: El archivo 'archivo_barcos_jugador' debe estar abierto en modo LECTURA.
     Postcondiciones: Guarda en 'barcos_jugador' todas las posiciones de los barcos recibidos por en el 'archivo_pos_barcos'. Devuelve EXITO si se guardo correctamente las posiciones, ERROR en caso contrario
 */
 int guardar_barcos_jugador(barco_t barcos_jugador[CANT_BARCOS], FILE* archivo_barcos_jugador){    
-    //datos_t datos_archivo[CANT_BARCOS];    
-    int i = 0;
+    int indice_barco = 0;
     bool espacios_reservados = true;
     bool barco_valido = true;
     
     int posicion_fila_inicial_barco = -1;
     int posicion_columna_inicial_barco = -1;
-    char direccion_barco = "";
+    char direccion_barco = ' ';
     int largo_barco = -1;
 
     int leidos = fscanf(archivo_barcos_jugador, FORMATO_LECTURA_BARCOS, &posicion_fila_inicial_barco, &posicion_columna_inicial_barco, &direccion_barco, &largo_barco);
     
-    while (!EOF && espacios_reservados &&  barco_valido){
+    while (leidos == CANT_MAX_BARCOS && espacios_reservados && barco_valido && indice_barco < CANT_BARCOS){
         
-        //valida que sean enteros, char, largo permitido
-        if(!datos_archivo_barcos_validos(posicion_fila_inicial_barco, posicion_columna_inicial_barco, direccion_barco, largo_barco )){
+        if (!datos_archivo_barcos_validos(posicion_fila_inicial_barco, posicion_columna_inicial_barco, direccion_barco, largo_barco)){
             barco_valido = false;
         }
-
-        // valida que 
-        if(validar_posiciones_archivo)
-
-        //reseva posiciones
-        if (!reservar_posiciones_barco(largo_barco)){
+        
+        if (barco_valido && !reservar_posiciones_barco(&barcos_jugador[indice_barco], largo_barco)){
             espacios_reservados = false;
+            liberar_espacio_barcos(barcos_jugador, indice_barco);
         }
         
-        //carga barcos en el struc
-
-
-    }
-    
-    
-    
-    while (i < CANT_BARCOS && espacios_reservados && leidos == 4){
-        if (!reservar_posiciones_barco(barcos_jugador, i)){
-            espacios_reservados = false;
+        if (barco_valido && espacios_reservados){
+            barcos_jugador[indice_barco].largo = largo_barco;
+            barcos_jugador[indice_barco].posiciones[0].fila = posicion_fila_inicial_barco - 1;
+            barcos_jugador[indice_barco].posiciones[0].columna = posicion_columna_inicial_barco - 1;
+            
+            for (int i = 1; i < largo_barco; i++){
+                calcular_desplazamiento(posicion_fila_inicial_barco - 1, posicion_columna_inicial_barco - 1, direccion_barco, i,
+                    &barcos_jugador[indice_barco].posiciones[i].fila,
+                    &barcos_jugador[indice_barco].posiciones[i].columna);
+            }
+            
+            if (!validar_superposiciones_barcos(barcos_jugador, indice_barco)){
+                barco_valido = false;
+                liberar_espacio_barcos(barcos_jugador, indice_barco);
+            }
         }
-        i++;
-        if (i < CANT_BARCOS){
-            leidos = fscanf(archivo_barcos_jugador, FORMATO_LECTURA_BARCOS, &datos_archivo[i].fila, &datos_archivo[i].columna, &datos_archivo[i].direccion, &datos_archivo[i].largo);
-        }
+        
+        indice_barco++;
+        leidos = fscanf(archivo_barcos_jugador, FORMATO_LECTURA_BARCOS, &posicion_fila_inicial_barco, &posicion_columna_inicial_barco, &direccion_barco, &largo_barco);
     }
     if (!espacios_reservados){
         printf("Error al reservar memoria para las posiciones de los barcos\n");
         return ERROR;
     }
 
-    if (i != CANT_BARCOS){
-        printf("Error en la cantidad de barcos en el archivo de barcos.csv (se necesita 5 lineas con los barcos)\n");
-        return ERROR;
-    }
-
-    if (!validar_posiciones_archivo(datos_archivo)){
-        printf("Error en el contenido del archivo barcos.csv\n");
-        return ERROR;
-    }
-
-    if (guardar_barco(datos_archivo, barcos_jugador) != EXITO ){
+    if (!barco_valido || indice_barco != CANT_BARCOS){
+        printf("Error en los datos de los barcos (posiciones, direccion o largo) o superposicion de barcos\n");
+        liberar_espacio_barcos(barcos_jugador, indice_barco);
         return ERROR;
     }
 
