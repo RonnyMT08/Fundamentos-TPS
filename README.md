@@ -1,2 +1,1 @@
-# Fundamentos
-fundamentos de la priogramacion?
+# Fundamentos de la Programación 1-2026
